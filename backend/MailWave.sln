@@ -1,0 +1,101 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{C7DFBA52-8B88-4C4A-B2C9-84FE1EDDE9EC}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MailManagement", "MailManagement", "{DEA21BF4-F267-4A1B-8BE1-0C4B18ABC610}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AccountManagement", "AccountManagement", "{76E5AF1C-559B-4F9C-BF9D-0A5430FE03B3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MailWave.Mail.Domain", "src\MailManagement\MailWave.Mail.Domain\MailWave.Mail.Domain.csproj", "{1A82EFF9-859F-44EF-A849-549E118CAE58}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MailWave.Mail.Application", "src\MailManagement\MailWave.Mail.Application\MailWave.Mail.Application.csproj", "{88443CCC-7443-47C3-BAA5-E5B4D6C88AC2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MailWave.Mail.Infrastructure", "src\MailManagement\MailWave.Mail.Infrastructure\MailWave.Mail.Infrastructure.csproj", "{02FC3A1D-1B5F-47F2-BAC5-D7CC3CA85BD7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MailWave.Mail.Controllers", "src\MailManagement\MailWave.Mail.Controllers\MailWave.Mail.Controllers.csproj", "{1100EA7A-827E-4C4A-B858-03EB12EAF3F9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MailWave.Accounts.Domain", "src\AccountManagement\MailWave.Accounts.Domain\MailWave.Accounts.Domain.csproj", "{5E51F3C0-66B5-44D7-A6C4-37BE656A83B0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MailWave.Accounts.Application", "src\AccountManagement\MailWave.Accounts.Application\MailWave.Accounts.Application.csproj", "{19DB548B-D672-4A3F-9D95-DE2147B71448}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MailWave.Accounts.Infrastructure", "src\AccountManagement\MailWave.Accounts.Infrastructure\MailWave.Accounts.Infrastructure.csproj", "{AAFDF6DB-E7A6-4096-82A2-F306D03A2179}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MailWave.Accounts.Controllers", "src\AccountManagement\MailWave.Accounts.Controllers\MailWave.Accounts.Controllers.csproj", "{442DEC3E-477C-4045-A83F-910122500B31}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MailWave.Accounts.Contracts", "src\AccountManagement\MailWave.Accounts.Contracts\MailWave.Accounts.Contracts.csproj", "{6A91BB9C-8A7E-4906-9180-190818027BD2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MailWave.Web", "src\MailWave.Web\MailWave.Web.csproj", "{7B83AE93-183E-489E-8AB3-36630ADF350D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{4EEE1C6C-6872-4DE5-A184-83BA6163DB59}"
+	ProjectSection(SolutionItems) = preProject
+		docker-compose.yml = docker-compose.yml
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{DEA21BF4-F267-4A1B-8BE1-0C4B18ABC610} = {C7DFBA52-8B88-4C4A-B2C9-84FE1EDDE9EC}
+		{76E5AF1C-559B-4F9C-BF9D-0A5430FE03B3} = {C7DFBA52-8B88-4C4A-B2C9-84FE1EDDE9EC}
+		{1A82EFF9-859F-44EF-A849-549E118CAE58} = {DEA21BF4-F267-4A1B-8BE1-0C4B18ABC610}
+		{88443CCC-7443-47C3-BAA5-E5B4D6C88AC2} = {DEA21BF4-F267-4A1B-8BE1-0C4B18ABC610}
+		{02FC3A1D-1B5F-47F2-BAC5-D7CC3CA85BD7} = {DEA21BF4-F267-4A1B-8BE1-0C4B18ABC610}
+		{1100EA7A-827E-4C4A-B858-03EB12EAF3F9} = {DEA21BF4-F267-4A1B-8BE1-0C4B18ABC610}
+		{5E51F3C0-66B5-44D7-A6C4-37BE656A83B0} = {76E5AF1C-559B-4F9C-BF9D-0A5430FE03B3}
+		{19DB548B-D672-4A3F-9D95-DE2147B71448} = {76E5AF1C-559B-4F9C-BF9D-0A5430FE03B3}
+		{AAFDF6DB-E7A6-4096-82A2-F306D03A2179} = {76E5AF1C-559B-4F9C-BF9D-0A5430FE03B3}
+		{442DEC3E-477C-4045-A83F-910122500B31} = {76E5AF1C-559B-4F9C-BF9D-0A5430FE03B3}
+		{6A91BB9C-8A7E-4906-9180-190818027BD2} = {76E5AF1C-559B-4F9C-BF9D-0A5430FE03B3}
+		{7B83AE93-183E-489E-8AB3-36630ADF350D} = {C7DFBA52-8B88-4C4A-B2C9-84FE1EDDE9EC}
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1A82EFF9-859F-44EF-A849-549E118CAE58}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A82EFF9-859F-44EF-A849-549E118CAE58}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A82EFF9-859F-44EF-A849-549E118CAE58}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A82EFF9-859F-44EF-A849-549E118CAE58}.Release|Any CPU.Build.0 = Release|Any CPU
+		{88443CCC-7443-47C3-BAA5-E5B4D6C88AC2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{88443CCC-7443-47C3-BAA5-E5B4D6C88AC2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{88443CCC-7443-47C3-BAA5-E5B4D6C88AC2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{88443CCC-7443-47C3-BAA5-E5B4D6C88AC2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{02FC3A1D-1B5F-47F2-BAC5-D7CC3CA85BD7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{02FC3A1D-1B5F-47F2-BAC5-D7CC3CA85BD7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{02FC3A1D-1B5F-47F2-BAC5-D7CC3CA85BD7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{02FC3A1D-1B5F-47F2-BAC5-D7CC3CA85BD7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1100EA7A-827E-4C4A-B858-03EB12EAF3F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1100EA7A-827E-4C4A-B858-03EB12EAF3F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1100EA7A-827E-4C4A-B858-03EB12EAF3F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1100EA7A-827E-4C4A-B858-03EB12EAF3F9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5E51F3C0-66B5-44D7-A6C4-37BE656A83B0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5E51F3C0-66B5-44D7-A6C4-37BE656A83B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5E51F3C0-66B5-44D7-A6C4-37BE656A83B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5E51F3C0-66B5-44D7-A6C4-37BE656A83B0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{19DB548B-D672-4A3F-9D95-DE2147B71448}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{19DB548B-D672-4A3F-9D95-DE2147B71448}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{19DB548B-D672-4A3F-9D95-DE2147B71448}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{19DB548B-D672-4A3F-9D95-DE2147B71448}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AAFDF6DB-E7A6-4096-82A2-F306D03A2179}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AAFDF6DB-E7A6-4096-82A2-F306D03A2179}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AAFDF6DB-E7A6-4096-82A2-F306D03A2179}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AAFDF6DB-E7A6-4096-82A2-F306D03A2179}.Release|Any CPU.Build.0 = Release|Any CPU
+		{442DEC3E-477C-4045-A83F-910122500B31}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{442DEC3E-477C-4045-A83F-910122500B31}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{442DEC3E-477C-4045-A83F-910122500B31}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{442DEC3E-477C-4045-A83F-910122500B31}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6A91BB9C-8A7E-4906-9180-190818027BD2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6A91BB9C-8A7E-4906-9180-190818027BD2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6A91BB9C-8A7E-4906-9180-190818027BD2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6A91BB9C-8A7E-4906-9180-190818027BD2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7B83AE93-183E-489E-8AB3-36630ADF350D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7B83AE93-183E-489E-8AB3-36630ADF350D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7B83AE93-183E-489E-8AB3-36630ADF350D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7B83AE93-183E-489E-8AB3-36630ADF350D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
