@@ -1,0 +1,6 @@
+﻿services:
+  mailwave.web:
+    image: mailwave.web
+    build:
+      context: .
+      dockerfile: src/MailWave.Web/Dockerfile
