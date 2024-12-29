@@ -1,5 +1,6 @@
 ﻿namespace MailWave.Mail.Application;
 
-public class Class1
+public class DependencyInjection
 {
+    
 }

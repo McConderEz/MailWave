@@ -10,4 +10,8 @@
       <ProjectReference Include="..\MailWave.Mail.Domain\MailWave.Mail.Domain.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Features\" />
+    </ItemGroup>
+
 </Project>
