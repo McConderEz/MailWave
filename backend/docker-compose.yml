@@ -55,7 +55,19 @@
         MONGO_INITDB_ROOT_PASSWORD: mongopassword
       ports:
         - "27017:27017"
+  redis:
+    image: redis:latest
+    container_name: redis
+    environment:
+      - REDIS_PASSWORD=12345
+      - REDIS_USER=admin
+      - REDIS_USER_PASSWORD=12345
+    ports:
+      - "6380:6379"
+    volumes:
+      - ./redisdata:/data
     
 volumes:
     rabbitmq_data:
     postgres-data:
+    redis-data:
