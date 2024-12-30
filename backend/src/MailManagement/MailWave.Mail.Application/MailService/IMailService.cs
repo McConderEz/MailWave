@@ -1,6 +1,5 @@
-﻿using CSharpFunctionalExtensions;
-using MailWave.Mail.Domain.Constraints;
-using MailWave.Mail.Domain.Entities;
+﻿using MailWave.Mail.Domain.Entities;
+using MailWave.SharedKernel.Shared;
 using EmailFolder = MailWave.Mail.Domain.Constraints.Constraints.EmailFolder;
 
 namespace MailWave.Mail.Application.MailService;
@@ -13,7 +12,7 @@ public interface IMailService
     /// <param name="letter">Письмо для отправки(адреса получателей, отправитель, основная информация)</param>
     /// <param name="cancellationToken">Токен отмены</param>
     /// <returns></returns>
-    Task<UnitResult<string>> SendMessage(Letter letter, CancellationToken cancellationToken = default);
+    Task<Result> SendMessage(Letter letter, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Получения писем из папки

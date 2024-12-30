@@ -1,11 +1,12 @@
-﻿using CSharpFunctionalExtensions;
-using MailKit;
+﻿using MailKit;
 using MailKit.Net.Imap;
 using MailKit.Net.Smtp;
 using MailKit.Search;
 using MailWave.Mail.Domain.Entities;
 using MailWave.Mail.Domain.Shared;
 using MailWave.Mail.Infrastructure.Extensions;
+using MailWave.SharedKernel.Shared;
+using MailWave.SharedKernel.Shared.Errors;
 using Microsoft.Extensions.Logging;
 using MimeKit;
 using IMailService = MailWave.Mail.Application.MailService.IMailService;
@@ -40,11 +41,11 @@ public class MailService : IMailService
     /// <param name="letter">Письмо для отправки(адреса получателей, отправитель, основная информация)</param>
     /// <param name="cancellationToken">Токен отмены</param>
     /// <returns></returns>
-    public async Task<UnitResult<string>> SendMessage(Letter letter, CancellationToken cancellationToken = default)
+    public async Task<Result> SendMessage(Letter letter, CancellationToken cancellationToken = default)
     {
         var validationResult = _validator.Execute(letter.To);
         if (validationResult.IsFailure)
-            return validationResult.Error;
+            return validationResult.Errors;
 
         letter.To = validationResult.Value;
 
@@ -69,20 +70,20 @@ public class MailService : IMailService
             using var client = new SmtpClient();
 
             //TODO: Создать хранение настроек
-            await client.ConnectAsync("", 0, cancellationToken: cancellationToken);
-            await client.AuthenticateAsync("", "", cancellationToken);
+            await client.ConnectAsync("smtp.gmail.com", 587, cancellationToken: cancellationToken);
+            await client.AuthenticateAsync("minoddein.ezz@gmail.com", "urlruiukmyuarruj", cancellationToken);
             await client.SendAsync(mail, cancellationToken);
             await client.DisconnectAsync(true,cancellationToken);
             
             foreach (var address in mail.To)
                 _logger.LogInformation("Email successfully sended to {to}", address);
             
-            return UnitResult.Success<string>();
+            return Result.Success();
         }
         catch (Exception ex)
         {
             _logger.LogError("The email message was not sent");
-            return UnitResult.Failure("The email message was not sent");
+            return Error.Failure("send.email.error","The email message was not sent");
         }
     }
     
@@ -125,7 +126,7 @@ public class MailService : IMailService
         {
             _logger.LogError("Cannot receive email message");
 
-            return Result.Failure<List<Letter>>("Cannot receive email message");
+            return Error.Failure("email.receive.error","Cannot receive email message");
         }
     }
     
@@ -180,7 +181,7 @@ public class MailService : IMailService
             await client.DisconnectAsync(true, cancellationToken);
             
             if (letter.IsFailure)
-                return Result.Failure<Letter>(letter.Error);
+                return letter.Errors;
             
             _logger.LogInformation("Got letter from folder {folder} with message id {messageId}",
                 selectedFolder.ToString(), messageId);
@@ -190,7 +191,7 @@ public class MailService : IMailService
         catch (Exception ex)
         {
             _logger.LogError("Cannot get message with id {messageId}. Ex. message: {ex}", messageId, ex.Message);
-            return Result.Failure<Letter>("Failure");
+            return Error.Failure("message.receive.error","Cannot get message");
         }
     }
 
@@ -221,7 +222,7 @@ public class MailService : IMailService
                 .FirstOrDefault(u => u.Id == messageId);
 
             if (uId is null)
-                return Result.Failure<Letter>($"Cannot find letter with uid {messageId}");
+                return Errors.General.NotFound();
 
             var result = await folder.StoreAsync(
                 uId.Value,
@@ -229,7 +230,7 @@ public class MailService : IMailService
                 cancellationToken);
 
             if (!result)
-                return Result.Failure("Cannot marked message as deleted");
+                return Error.Failure("delete.mark.error","Cannot marked message as deleted");
 
             await folder.ExpungeAsync(cancellationToken);
             
@@ -240,7 +241,7 @@ public class MailService : IMailService
         catch (Exception ex)
         {
             _logger.LogError("Cannot deleted message. Ex. message: {ex}", ex.Message);
-            return Result.Failure("Cannot delete message");
+            return Error.Failure("delete.message.error","Cannot marked message as deleted");
         }
     }
 
@@ -272,7 +273,7 @@ public class MailService : IMailService
                 .FirstOrDefault(u => u.Id == messageId);
 
             if (uId is null)
-                return Result.Failure<Letter>($"Cannot find letter with uid {messageId}");
+                return Errors.General.NotFound();
 
             await folder.MoveToAsync(uId.Value, folderForMove, cancellationToken);
             
@@ -285,7 +286,7 @@ public class MailService : IMailService
         catch(Exception ex)
         {
             _logger.LogError("Cannot move message. Ex. message: {ex}", ex.Message);
-            return Result.Failure("Cannot move message");
+            return Error.Failure("message.move.error","Cannot move message");
         }
     }
 }

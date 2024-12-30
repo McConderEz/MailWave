@@ -7,12 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\Shared\MailWave.Core\MailWave.Core.csproj" />
-        <ProjectReference Include="..\MailWave.Mail.Domain\MailWave.Mail.Domain.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Features\" />
+      <ProjectReference Include="..\MailWave.SharedKernel\MailWave.SharedKernel.csproj" />
     </ItemGroup>
 
 </Project>

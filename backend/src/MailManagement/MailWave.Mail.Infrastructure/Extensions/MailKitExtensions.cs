@@ -1,7 +1,8 @@
-﻿using CSharpFunctionalExtensions;
-using MailKit;
+﻿using MailKit;
 using MailKit.Search;
 using MailWave.Mail.Domain.Entities;
+using MailWave.SharedKernel.Shared;
+using MailWave.SharedKernel.Shared.Errors;
 using MimeKit;
 
 namespace MailWave.Mail.Infrastructure.Extensions;
@@ -64,12 +65,12 @@ public static class MailKitExtensions
             .FirstOrDefault(u => u.Id == messageId);
 
         if (uId is null)
-            return Result.Failure<Letter>($"Cannot find letter with uid {messageId}");
+            return Error.Failure("not.found",$"Cannot find letter with uid {messageId}");
             
         var message = await folder.GetMessageAsync(uId.Value, cancellationToken);
 
         if (message is null)
-            return Result.Failure<Letter>($"Cannot get message");
+            return Error.Failure("get.message.error",$"Cannot get message");
 
         var letter = new Letter
         {

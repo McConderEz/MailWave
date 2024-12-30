@@ -1,5 +1,6 @@
 ﻿using System.Text.RegularExpressions;
-using CSharpFunctionalExtensions;
+using MailWave.SharedKernel.Shared;
+using MailWave.SharedKernel.Shared.Errors;
 
 namespace MailWave.Mail.Domain.Shared;
 
@@ -26,7 +27,7 @@ public partial class EmailValidator
 
         if (addresses.Count == 0)
         {
-            return Result.Failure<List<string>>(INVALID_EMAIL_ERR);
+            return Error.Validation("email.format.error",INVALID_EMAIL_ERR);
         }
 
         return addresses;
