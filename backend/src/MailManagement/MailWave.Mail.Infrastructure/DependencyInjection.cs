@@ -1,6 +1,9 @@
-﻿namespace MailWave.Mail.Infrastructure;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
-public class DependencyInjection
+namespace MailWave.Mail.Infrastructure;
+
+public static class DependencyInjection
 {
-    
+   
 }

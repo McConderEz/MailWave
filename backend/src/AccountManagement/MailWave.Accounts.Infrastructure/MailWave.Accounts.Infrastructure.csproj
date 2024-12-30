@@ -7,7 +7,21 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\MailManagement\MailWave.Mail.Application\MailWave.Mail.Application.csproj" />
+      <ProjectReference Include="..\..\Shared\MailWave.Framework\MailWave.Framework.csproj" />
       <ProjectReference Include="..\MailWave.Accounts.Application\MailWave.Accounts.Application.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.0" />
+      <PackageReference Include="MongoDB.Bson" Version="3.1.0" />
+      <PackageReference Include="MongoDB.Driver" Version="3.1.0" />
+      <PackageReference Include="MongoDB.Driver.Core" Version="2.30.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Managers\" />
     </ItemGroup>
 
 </Project>
