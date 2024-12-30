@@ -10,9 +10,9 @@ public partial class EmailValidator
     
 
     /// <summary>
-    /// Метод, вызывающий валидацию email-адрессов 
+    /// Метод, вызывающий валидацию email-адресов 
     /// </summary>
-    /// <param name="addresses">список адрессов</param>
+    /// <param name="addresses">Список адресов</param>
     /// <returns></returns>
     public Result<List<string>> Execute(List<string> addresses)
     {

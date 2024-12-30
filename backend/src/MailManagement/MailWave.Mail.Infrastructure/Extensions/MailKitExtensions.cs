@@ -1,4 +1,5 @@
-﻿using MailKit;
+﻿using CSharpFunctionalExtensions;
+using MailKit;
 using MailKit.Search;
 using MailWave.Mail.Domain.Entities;
 using MimeKit;
@@ -45,5 +46,50 @@ public static class MailKitExtensions
         }
 
         return messages;
+    }
+
+    /// <summary>
+    /// Получение письма со всеми вложениями, если они существуют
+    /// </summary>
+    /// <param name="folder">Выбранная папка</param>
+    /// <param name="messageId">Уникальный идентификатор сообщения</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns>Письмо со всеми вложенными файлами</returns>
+    public static async Task<Result<Letter>> GetMessageWithAttachmentsAsync(
+        this IMailFolder folder,
+        uint messageId,
+        CancellationToken cancellationToken = default)
+    {
+        UniqueId? uId = (await folder.SearchAsync(SearchQuery.All, cancellationToken))
+            .FirstOrDefault(u => u.Id == messageId);
+
+        if (uId is null)
+            return Result.Failure<Letter>($"Cannot find letter with uid {messageId}");
+            
+        var message = await folder.GetMessageAsync(uId.Value, cancellationToken);
+
+        if (message is null)
+            return Result.Failure<Letter>($"Cannot get message");
+
+        var letter = new Letter
+        {
+            Id = uId.Value.Id,
+            Body = message.HtmlBody,
+            From = message.From.ToString(),
+            To = message.To.Select(t => t.Name).ToList(),
+            Subject = message.Subject,
+            Date = message.Date.DateTime
+        };
+            
+        if (message.Attachments.Count() != 0)
+        {
+            foreach (var attachment in message.Attachments)
+            {
+                var fileName = attachment.ContentDisposition.FileName;
+                letter.AttachmentNames.Add(fileName);
+            }
+        }
+
+        return letter;
     }
 }

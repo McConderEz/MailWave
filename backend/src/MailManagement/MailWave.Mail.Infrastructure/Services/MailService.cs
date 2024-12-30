@@ -8,18 +8,22 @@ using MailWave.Mail.Domain.Shared;
 using MailWave.Mail.Infrastructure.Extensions;
 using Microsoft.Extensions.Logging;
 using MimeKit;
+using IMailService = MailWave.Mail.Application.MailService.IMailService;
+using EmailFolder = MailWave.Mail.Domain.Constraints.Constraints.EmailFolder;
 
 namespace MailWave.Mail.Infrastructure.Services;
 
 /// <summary>
 /// Сервис отправления сообщений по почте
 /// </summary>
-public class MailService
+public class MailService : IMailService
 {
    // private readonly MailOptions _mailOptions;
     private readonly ILogger<MailService> _logger;
     private readonly EmailValidator _validator;
 
+    //TODO: Все письма при получении пока что не проставляют false/true в IsCrypted/IsSigned
+    
     public MailService(
         //IOptions<MailOptions> mailOptions,
         ILogger<MailService> logger,
@@ -33,10 +37,10 @@ public class MailService
     /// <summary>
     /// Метод отправки данных по почте
     /// </summary>
-    /// <param name="letter">Письмо для отправки(адресса получателей, отправитель, основная информация)</param>
+    /// <param name="letter">Письмо для отправки(адреса получателей, отправитель, основная информация)</param>
     /// <param name="cancellationToken">Токен отмены</param>
     /// <returns></returns>
-    public async Task<UnitResult<string>> Send(Letter letter, CancellationToken cancellationToken = default)
+    public async Task<UnitResult<string>> SendMessage(Letter letter, CancellationToken cancellationToken = default)
     {
         var validationResult = _validator.Execute(letter.To);
         if (validationResult.IsFailure)
@@ -68,10 +72,11 @@ public class MailService
             await client.ConnectAsync("", 0, cancellationToken: cancellationToken);
             await client.AuthenticateAsync("", "", cancellationToken);
             await client.SendAsync(mail, cancellationToken);
-
+            await client.DisconnectAsync(true,cancellationToken);
+            
             foreach (var address in mail.To)
                 _logger.LogInformation("Email successfully sended to {to}", address);
-
+            
             return UnitResult.Success<string>();
         }
         catch (Exception ex)
@@ -92,7 +97,7 @@ public class MailService
     /// <param name="cancellationToken">Токен отмены</param>
     /// <returns>Result со списком писем</returns>
     public async Task<Result<List<Letter>>> GetMessages(
-        SpecialFolder selectedFolder, 
+        EmailFolder selectedFolder, 
         int page,
         int pageSize,
         CancellationToken cancellationToken = default)
@@ -104,19 +109,16 @@ public class MailService
             await client.ConnectAsync("", 0, cancellationToken: cancellationToken);
             await client.AuthenticateAsync("", "", cancellationToken);
 
-            var folder = await client.GetFolderAsync(selectedFolder switch
-            {
-                SpecialFolder.Sent => SpecialFolder.Sent.ToString(),
-                SpecialFolder.Drafts => SpecialFolder.Drafts.ToString(),
-                SpecialFolder.Junk => SpecialFolder.Junk.ToString(),
-                SpecialFolder.Trash => SpecialFolder.Trash.ToString(),
-                _ => client.Inbox.ToString()
-            }, cancellationToken);
+            var folder = await SelectFolder(selectedFolder, client, cancellationToken);
 
             await folder.OpenAsync(FolderAccess.ReadWrite, cancellationToken);
 
             var result = await folder.GetMessagesAsync(page, pageSize, cancellationToken);
-
+            
+            await client.DisconnectAsync(true,cancellationToken);
+            
+            _logger.LogInformation("Got all letters from folder {folder}", selectedFolder.ToString());
+            
             return result;
         }
         catch (Exception ex)
@@ -124,6 +126,166 @@ public class MailService
             _logger.LogError("Cannot receive email message");
 
             return Result.Failure<List<Letter>>("Cannot receive email message");
+        }
+    }
+    
+    /// <summary>
+    /// Метод для выбора папки с письмами
+    /// </summary>
+    /// <param name="selectedFolder">Выбранная папка</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <param name="client">Imap клиент</param>
+    /// <returns>Интерфейс IMailFolder с выбранной папкой</returns>
+    private async Task<IMailFolder> SelectFolder(
+        EmailFolder selectedFolder,
+        ImapClient client,
+        CancellationToken cancellationToken = default)
+    {
+        var folder = await client.GetFolderAsync(selectedFolder switch
+        { 
+            EmailFolder.Sent => SpecialFolder.Sent.ToString(),
+            EmailFolder.Drafts => SpecialFolder.Drafts.ToString(),
+            EmailFolder.Junk => SpecialFolder.Junk.ToString(),
+            EmailFolder.Trash => SpecialFolder.Trash.ToString(),
+            _ => client.Inbox.ToString()
+        }, cancellationToken);
+        return folder;
+    }
+
+    /// <summary>
+    /// Получение письма по идентификатору
+    /// </summary>
+    /// <param name="selectedFolder">Выбранная папка</param>
+    /// <param name="messageId">Идентификатор письма uid</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns>Письмо с вложениями</returns>
+    public async Task<Result<Letter>> GetMessage(
+        EmailFolder selectedFolder, 
+        uint messageId,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            using var client = new ImapClient();
+
+            await client.ConnectAsync("", 0, cancellationToken: cancellationToken);
+            await client.AuthenticateAsync("", "", cancellationToken);
+
+            var folder = await SelectFolder(selectedFolder, client, cancellationToken);
+
+            await folder.OpenAsync(FolderAccess.ReadWrite, cancellationToken);
+            
+            var letter = await folder.GetMessageWithAttachmentsAsync(messageId, cancellationToken);
+
+            await client.DisconnectAsync(true, cancellationToken);
+            
+            if (letter.IsFailure)
+                return Result.Failure<Letter>(letter.Error);
+            
+            _logger.LogInformation("Got letter from folder {folder} with message id {messageId}",
+                selectedFolder.ToString(), messageId);
+            
+            return letter;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Cannot get message with id {messageId}. Ex. message: {ex}", messageId, ex.Message);
+            return Result.Failure<Letter>("Failure");
+        }
+    }
+
+    /// <summary>
+    /// Удаление письма из выбранной папки по уникальному идентификатору
+    /// </summary>
+    /// <param name="selectedFolder">Выбранная папка</param>
+    /// <param name="messageId">Идентификатор письма uid</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns></returns>
+    public async Task<Result> DeleteMessage(
+        EmailFolder selectedFolder,
+        uint messageId,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            using var client = new ImapClient();
+            
+            await client.ConnectAsync("", 0, cancellationToken: cancellationToken);
+            await client.AuthenticateAsync("", "", cancellationToken);
+
+            var folder = await SelectFolder(selectedFolder, client, cancellationToken);
+            
+            await folder.OpenAsync(FolderAccess.ReadWrite, cancellationToken);
+
+            UniqueId? uId = (await folder.SearchAsync(SearchQuery.All, cancellationToken))
+                .FirstOrDefault(u => u.Id == messageId);
+
+            if (uId is null)
+                return Result.Failure<Letter>($"Cannot find letter with uid {messageId}");
+
+            var result = await folder.StoreAsync(
+                uId.Value,
+                new StoreFlagsRequest(StoreAction.Add, MessageFlags.Deleted) { Silent = true },
+                cancellationToken);
+
+            if (!result)
+                return Result.Failure("Cannot marked message as deleted");
+
+            await folder.ExpungeAsync(cancellationToken);
+            
+            _logger.LogInformation("Marked message was deleted");
+
+            return Result.Success();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Cannot deleted message. Ex. message: {ex}", ex.Message);
+            return Result.Failure("Cannot delete message");
+        }
+    }
+
+    /// <summary>
+    /// Перемещение письма из выбранной папки в целевую по уникальному идентификатору 
+    /// </summary>
+    /// <param name="selectedFolder">Выбранная папка</param>
+    /// <param name="targetFolder">Папка для перемещения</param>
+    /// <param name="messageId">Идентификатор письма</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns></returns>
+    public async Task<Result> MoveMessage(EmailFolder selectedFolder, EmailFolder targetFolder, uint messageId,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            using var client = new ImapClient();
+            
+            await client.ConnectAsync("", 0, cancellationToken: cancellationToken);
+            await client.AuthenticateAsync("", "", cancellationToken);
+
+            var folder = await SelectFolder(selectedFolder, client, cancellationToken);
+            await folder.OpenAsync(FolderAccess.ReadWrite, cancellationToken);
+            
+            var folderForMove = await SelectFolder(targetFolder, client, cancellationToken);
+            await folderForMove.OpenAsync(FolderAccess.ReadWrite, cancellationToken);
+
+            UniqueId? uId = (await folder.SearchAsync(SearchQuery.All, cancellationToken))
+                .FirstOrDefault(u => u.Id == messageId);
+
+            if (uId is null)
+                return Result.Failure<Letter>($"Cannot find letter with uid {messageId}");
+
+            await folder.MoveToAsync(uId.Value, folderForMove, cancellationToken);
+            
+            _logger.LogInformation(
+                "Message with id {messageId} was moved from folder {previousFolder} to folder {targetFolder}",
+                messageId, selectedFolder.ToString(), targetFolder.ToString());
+
+            return Result.Success();
+        }
+        catch(Exception ex)
+        {
+            _logger.LogError("Cannot move message. Ex. message: {ex}", ex.Message);
+            return Result.Failure("Cannot move message");
         }
     }
 }
