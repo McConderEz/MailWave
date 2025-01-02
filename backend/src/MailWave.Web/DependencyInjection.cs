@@ -1,4 +1,5 @@
-﻿using MailWave.Accounts.Infrastructure;
+﻿using MailWave.Accounts.Application;
+using MailWave.Accounts.Infrastructure;
 using MailWave.Web.Extensions;
 
 namespace MailWave.Web;
@@ -12,6 +13,7 @@ public static class DependencyInjection
         services
             .AddLogger(configuration)
             .AddSwagger()
+            .AddAccountsApplication()
             .AddAccountInfrastructure(configuration);
 
         return services;

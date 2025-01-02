@@ -1,4 +1,5 @@
-﻿using MailWave.Accounts.Domain.Models;
+﻿using System.Security.Authentication;
+using MailWave.Accounts.Domain.Models;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using MongoDatabaseSettings = MailWave.Accounts.Infrastructure.Options.MongoDatabaseSettings;
@@ -13,8 +14,13 @@ public class AccountDbContext
     public AccountDbContext(IOptions<MongoDatabaseSettings> options)
     {
         _options = options.Value;
-        var client = new MongoClient(options.Value.ConnectionString);
-        _database = client.GetDatabase(options.Value.DatabaseName);
+
+        var settings = MongoClientSettings.FromUrl(new MongoUrl(_options.ConnectionString));
+        settings.UseTls = true;
+        settings.SslSettings = new SslSettings { EnabledSslProtocols = SslProtocols.Tls12 };
+
+        var client = new MongoClient(settings);
+        _database = client.GetDatabase(_options.DatabaseName);
     }
 
     public IMongoCollection<User> UserCollection =>

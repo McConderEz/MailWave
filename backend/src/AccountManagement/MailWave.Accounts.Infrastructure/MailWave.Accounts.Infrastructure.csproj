@@ -20,8 +20,4 @@
       <PackageReference Include="MongoDB.Driver.Core" Version="2.30.0" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Managers\" />
-    </ItemGroup>
-
 </Project>

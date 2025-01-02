@@ -2,7 +2,7 @@
 
 public class MongoDatabaseSettings
 {
-    public static readonly string Mongo = nameof(MongoDatabaseSettings);
+    public static string Mongo = nameof(Mongo);
     
     public string ConnectionString { get; set; } = null!;
     public string DatabaseName { get; set; } = null!;

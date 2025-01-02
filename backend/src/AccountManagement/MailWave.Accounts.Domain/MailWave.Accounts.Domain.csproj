@@ -10,4 +10,8 @@
       <ProjectReference Include="..\..\Shared\MailWave.SharedKernel\MailWave.SharedKernel.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="MongoDB.Bson" Version="3.1.0" />
+    </ItemGroup>
+
 </Project>
