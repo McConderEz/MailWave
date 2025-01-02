@@ -66,8 +66,6 @@ public static class DependencyInjection
             var client = serviceProvider.GetRequiredService<IMongoClient>();
             return client.GetDatabase(settings.DatabaseName);
         });
-        
-        services.AddScoped<AccountDbContext>();
 
         return services;
     }
