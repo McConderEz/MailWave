@@ -1,4 +1,5 @@
-﻿using MailWave.Mail.Domain.Entities;
+﻿using MailWave.Core.DTOs;
+using MailWave.Mail.Domain.Entities;
 using MailWave.SharedKernel.Shared;
 using EmailFolder = MailWave.Mail.Domain.Constraints.Constraints.EmailFolder;
 
@@ -12,7 +13,8 @@ public interface IMailService
     /// <param name="letter">Письмо для отправки(адреса получателей, отправитель, основная информация)</param>
     /// <param name="cancellationToken">Токен отмены</param>
     /// <returns></returns>
-    Task<Result> SendMessage(Letter letter, CancellationToken cancellationToken = default);
+    Task<Result> SendMessage(
+        MailCredentialsDto mailCredentialsDto,Letter letter, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Получения писем из папки
@@ -23,6 +25,7 @@ public interface IMailService
     /// <param name="cancellationToken">Токен отмены</param>
     /// <returns>Result со списком писем</returns>
     Task<Result<List<Letter>>> GetMessages(
+        MailCredentialsDto mailCredentialsDto,
         EmailFolder selectedFolder, 
         int page,
         int pageSize,
@@ -36,6 +39,7 @@ public interface IMailService
     /// <param name="cancellationToken">Токен отмены</param>
     /// <returns>Письмо с вложениями</returns>
     Task<Result<Letter>> GetMessage(
+        MailCredentialsDto mailCredentialsDto,
         EmailFolder selectedFolder, 
         uint messageId,
         CancellationToken cancellationToken = default);
@@ -48,6 +52,7 @@ public interface IMailService
     /// <param name="cancellationToken">Токен отмены</param>
     /// <returns></returns>
     Task<Result> DeleteMessage(
+        MailCredentialsDto mailCredentialsDto,
         EmailFolder selectedFolder,
         uint messageId,
         CancellationToken cancellationToken = default);
@@ -61,6 +66,7 @@ public interface IMailService
     /// <param name="cancellationToken">Токен отмены</param>
     /// <returns></returns>
     Task<Result> MoveMessage(
+        MailCredentialsDto mailCredentialsDto,
         EmailFolder selectedFolder,
         EmailFolder targetFolder,
         uint messageId,

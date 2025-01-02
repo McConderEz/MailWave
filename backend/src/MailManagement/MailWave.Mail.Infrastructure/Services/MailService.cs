@@ -2,6 +2,7 @@
 using MailKit.Net.Imap;
 using MailKit.Net.Smtp;
 using MailKit.Search;
+using MailWave.Core.DTOs;
 using MailWave.Mail.Domain.Entities;
 using MailWave.Mail.Domain.Shared;
 using MailWave.Mail.Infrastructure.Extensions;
@@ -64,10 +65,14 @@ public class MailService : IMailService
     /// <summary>
     /// Метод отправки данных по почте
     /// </summary>
+    /// <param name="mailCredentialsDto">Данные учётной записи</param>
     /// <param name="letter">Письмо для отправки(адреса получателей, отправитель, основная информация)</param>
     /// <param name="cancellationToken">Токен отмены</param>
     /// <returns></returns>
-    public async Task<Result> SendMessage(Letter letter, CancellationToken cancellationToken = default)
+    public async Task<Result> SendMessage(
+        MailCredentialsDto mailCredentialsDto,
+        Letter letter,
+        CancellationToken cancellationToken = default)
     {
         var validationResult = _validator.Execute(letter.To);
         if (validationResult.IsFailure)
@@ -77,8 +82,7 @@ public class MailService : IMailService
 
         var mail = new MimeMessage();
         
-        //TODO: Отредачить
-        mail.From.Add(new MailboxAddress("minoddein.ezz@gmail.com", "minoddein.ezz@gmail.com"));
+        mail.From.Add(new MailboxAddress(mailCredentialsDto.Email, mailCredentialsDto.Email));
 
         foreach (var address in letter.To)
         {
@@ -97,7 +101,8 @@ public class MailService : IMailService
 
             //TODO: Создать хранение настроек
             await client.ConnectAsync("smtp.gmail.com", 587, cancellationToken: cancellationToken);
-            await client.AuthenticateAsync("minoddein.ezz@gmail.com", "urlruiukmyuarruj", cancellationToken);
+            await client.AuthenticateAsync(
+                mailCredentialsDto.Email, mailCredentialsDto.Password, cancellationToken);
             await client.SendAsync(mail, cancellationToken);
             await client.DisconnectAsync(true,cancellationToken);
             
@@ -118,12 +123,14 @@ public class MailService : IMailService
     /// <summary>
     /// Получения писем из папки
     /// </summary>
+    /// <param name="mailCredentialsDto">Данные учётной записи</param>
     /// <param name="selectedFolder">Папка, из которой получаем</param>
     /// <param name="page">Страница</param>
     /// <param name="pageSize">Размер страницы</param>
     /// <param name="cancellationToken">Токен отмены</param>
     /// <returns>Result со списком писем</returns>
     public async Task<Result<List<Letter>>> GetMessages(
+        MailCredentialsDto mailCredentialsDto,
         EmailFolder selectedFolder, 
         int page,
         int pageSize,
@@ -134,7 +141,8 @@ public class MailService : IMailService
             using var client = new ImapClient();
 
             await client.ConnectAsync("", 0, cancellationToken: cancellationToken);
-            await client.AuthenticateAsync("", "", cancellationToken);
+            await client.AuthenticateAsync(
+                mailCredentialsDto.Email, mailCredentialsDto.Password, cancellationToken);
 
             var folder = await SelectFolder(selectedFolder, client, cancellationToken);
 
@@ -182,11 +190,13 @@ public class MailService : IMailService
     /// <summary>
     /// Получение письма по идентификатору
     /// </summary>
+    /// <param name="mailCredentialsDto">Данные учётной записи</param>
     /// <param name="selectedFolder">Выбранная папка</param>
     /// <param name="messageId">Идентификатор письма uid</param>
     /// <param name="cancellationToken">Токен отмены</param>
     /// <returns>Письмо с вложениями</returns>
     public async Task<Result<Letter>> GetMessage(
+        MailCredentialsDto mailCredentialsDto,
         EmailFolder selectedFolder, 
         uint messageId,
         CancellationToken cancellationToken = default)
@@ -196,7 +206,8 @@ public class MailService : IMailService
             using var client = new ImapClient();
 
             await client.ConnectAsync("", 0, cancellationToken: cancellationToken);
-            await client.AuthenticateAsync("", "", cancellationToken);
+            await client.AuthenticateAsync(
+                mailCredentialsDto.Email, mailCredentialsDto.Password, cancellationToken);
 
             var folder = await SelectFolder(selectedFolder, client, cancellationToken);
 
@@ -224,11 +235,13 @@ public class MailService : IMailService
     /// <summary>
     /// Удаление письма из выбранной папки по уникальному идентификатору
     /// </summary>
+    /// <param name="mailCredentialsDto">Данные учётной записи</param>
     /// <param name="selectedFolder">Выбранная папка</param>
     /// <param name="messageId">Идентификатор письма uid</param>
     /// <param name="cancellationToken">Токен отмены</param>
     /// <returns></returns>
     public async Task<Result> DeleteMessage(
+        MailCredentialsDto mailCredentialsDto,
         EmailFolder selectedFolder,
         uint messageId,
         CancellationToken cancellationToken = default)
@@ -238,7 +251,8 @@ public class MailService : IMailService
             using var client = new ImapClient();
             
             await client.ConnectAsync("", 0, cancellationToken: cancellationToken);
-            await client.AuthenticateAsync("", "", cancellationToken);
+            await client.AuthenticateAsync(
+                mailCredentialsDto.Email, mailCredentialsDto.Password, cancellationToken);
 
             var folder = await SelectFolder(selectedFolder, client, cancellationToken);
             
@@ -274,12 +288,17 @@ public class MailService : IMailService
     /// <summary>
     /// Перемещение письма из выбранной папки в целевую по уникальному идентификатору 
     /// </summary>
+    /// <param name="mailCredentialsDto">Данные учётной записи</param>
     /// <param name="selectedFolder">Выбранная папка</param>
     /// <param name="targetFolder">Папка для перемещения</param>
     /// <param name="messageId">Идентификатор письма</param>
     /// <param name="cancellationToken">Токен отмены</param>
     /// <returns></returns>
-    public async Task<Result> MoveMessage(EmailFolder selectedFolder, EmailFolder targetFolder, uint messageId,
+    public async Task<Result> MoveMessage(
+        MailCredentialsDto mailCredentialsDto,
+        EmailFolder selectedFolder,
+        EmailFolder targetFolder,
+        uint messageId,
         CancellationToken cancellationToken = default)
     {
         try
@@ -287,7 +306,8 @@ public class MailService : IMailService
             using var client = new ImapClient();
             
             await client.ConnectAsync("", 0, cancellationToken: cancellationToken);
-            await client.AuthenticateAsync("", "", cancellationToken);
+            await client.AuthenticateAsync(
+                mailCredentialsDto.Email, mailCredentialsDto.Password, cancellationToken);
 
             var folder = await SelectFolder(selectedFolder, client, cancellationToken);
             await folder.OpenAsync(FolderAccess.ReadWrite, cancellationToken);
