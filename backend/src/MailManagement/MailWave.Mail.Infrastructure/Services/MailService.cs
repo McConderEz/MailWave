@@ -36,6 +36,32 @@ public class MailService : IMailService
     }
 
     /// <summary>
+    /// Метод проверки соединения при входе в аккаунт
+    /// </summary>
+    /// <param name="userName">Имя учётной записи почты</param>
+    /// <param name="password">Пароль учётной записи почты для сторонних ПО</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns>Результат: успешно/провал</returns>
+    public async Task<Result> CheckConnection
+        (string userName, string password, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            using var client = new SmtpClient();
+
+            await client.ConnectAsync("smtp.gmail.com", 587, cancellationToken: cancellationToken);
+            await client.AuthenticateAsync(userName, password, cancellationToken);
+            await client.DisconnectAsync(true, cancellationToken);
+            
+            return Result.Success();
+        }
+        catch(Exception ex)
+        {
+            return Errors.MailErrors.ConnectionError();
+        }
+    }
+
+    /// <summary>
     /// Метод отправки данных по почте
     /// </summary>
     /// <param name="letter">Письмо для отправки(адреса получателей, отправитель, основная информация)</param>

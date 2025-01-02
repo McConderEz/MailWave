@@ -2,6 +2,7 @@
 using MailWave.Accounts.Application.Providers;
 using MailWave.Accounts.Application.Repositories;
 using MailWave.Accounts.Infrastructure.Managers;
+using MailWave.Accounts.Infrastructure.Providers;
 using MailWave.Accounts.Infrastructure.Repositories;
 using MailWave.Core.Common;
 using MailWave.Core.Options;
@@ -10,6 +11,7 @@ using MailWave.SharedKernel.Shared;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using MongoDatabaseSettings = MailWave.Accounts.Infrastructure.Options.MongoDatabaseSettings;
 
@@ -35,7 +37,8 @@ public static class DependencyInjection
     {
         services.AddScoped<IRefreshSessionManager, RefreshSessionManager>();
         services.AddTransient<IDateTimeProvider, DateTimeProvider>();
-
+        services.AddTransient<ICryptProvider, CryptoProvider>();
+        
         return services;
     }
 
@@ -50,6 +53,19 @@ public static class DependencyInjection
     {
         services.Configure<MongoDatabaseSettings>(
             configuration.GetSection(MongoDatabaseSettings.Mongo) ?? throw new ApplicationException());
+        
+        services.AddSingleton<IMongoClient>(serviceProvider =>
+        {
+            var settings = serviceProvider.GetRequiredService<IOptions<MongoDatabaseSettings>>().Value;
+            return new MongoClient(settings.ConnectionString);
+        });
+        
+        services.AddScoped<IMongoDatabase>(serviceProvider =>
+        {
+            var settings = serviceProvider.GetRequiredService<IOptions<MongoDatabaseSettings>>().Value;
+            var client = serviceProvider.GetRequiredService<IMongoClient>();
+            return client.GetDatabase(settings.DatabaseName);
+        });
         
         services.AddScoped<AccountDbContext>();
 

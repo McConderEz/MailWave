@@ -15,4 +15,8 @@
       <ProjectReference Include="..\MailWave.Core\MailWave.Core.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Models\" />
+    </ItemGroup>
+
 </Project>

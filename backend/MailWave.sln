@@ -42,6 +42,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MailWave.Framework", "src\S
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MailWave.SharedKernel", "src\Shared\MailWave.SharedKernel\MailWave.SharedKernel.csproj", "{C1581ADF-496B-47A7-A6AE-34F7073781BC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MailWave.Mail.Contracts", "src\MailManagement\MailWave.Mail.Contracts\MailWave.Mail.Contracts.csproj", "{0EB0D52F-EDCD-4330-9B33-39964CA7BCC0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -67,6 +69,7 @@ Global
 		{487CB646-8F0F-4D15-B68D-8D40611841EF} = {AC509105-9CCC-4C93-91F7-6AC2413AAAA2}
 		{8EEDC3DB-0665-4522-B2A9-BAA25715FD6E} = {AC509105-9CCC-4C93-91F7-6AC2413AAAA2}
 		{C1581ADF-496B-47A7-A6AE-34F7073781BC} = {AC509105-9CCC-4C93-91F7-6AC2413AAAA2}
+		{0EB0D52F-EDCD-4330-9B33-39964CA7BCC0} = {DEA21BF4-F267-4A1B-8BE1-0C4B18ABC610}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{1A82EFF9-859F-44EF-A849-549E118CAE58}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -121,5 +124,9 @@ Global
 		{C1581ADF-496B-47A7-A6AE-34F7073781BC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C1581ADF-496B-47A7-A6AE-34F7073781BC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C1581ADF-496B-47A7-A6AE-34F7073781BC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0EB0D52F-EDCD-4330-9B33-39964CA7BCC0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0EB0D52F-EDCD-4330-9B33-39964CA7BCC0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0EB0D52F-EDCD-4330-9B33-39964CA7BCC0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0EB0D52F-EDCD-4330-9B33-39964CA7BCC0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

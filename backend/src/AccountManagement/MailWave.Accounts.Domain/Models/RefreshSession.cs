@@ -8,13 +8,13 @@ public class RefreshSession
     [BsonId]
     public string Id { get; init; }
     [BsonRequired]
-    public Guid UserId { get; init; }
+    public string UserId { get; init; }
     [BsonRequired]
     public User User { get; init; } = default!;
     [BsonRequired]
-    public Guid Jti { get; init; }
+    public string Jti { get; init; }
     [BsonRequired]
-    public Guid RefreshToken { get; init; }
+    public string RefreshToken { get; init; }
     [BsonRequired]
     public DateTime ExpiresIn { get; init; }
     [BsonRequired]

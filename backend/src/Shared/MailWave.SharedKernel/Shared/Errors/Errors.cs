@@ -33,6 +33,15 @@ public static class Errors
         }
     }
 
+    public static class MailErrors
+    {
+        public static Error ConnectionError()
+        {
+            return Error.Failure(
+                "connection.error", "Cannot connect to mail, probably incorrect credentials");
+        }
+    }
+
     public static class Tokens
     {
         public static Error ExpiredToken()

@@ -11,7 +11,7 @@ using MailWave.SharedKernel.Shared;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
-namespace MailWave.Accounts.Infrastructure;
+namespace MailWave.Accounts.Infrastructure.Providers;
 
 public class JwtTokenProvider: ITokenProvider
 {
@@ -67,16 +67,17 @@ public class JwtTokenProvider: ITokenProvider
     {
         var refreshSession = new RefreshSession()
         {
+            Id = Guid.NewGuid().ToString(),
             User = user,
             CreatedAt = _dateTimeProvider.UtcNow,
-            Jti = accessTokenJti,
+            Jti = accessTokenJti.ToString(),
             ExpiresIn = _dateTimeProvider.UtcNow.AddDays(_refreshSessionOptions.ExpiredDaysTime),
-            RefreshToken = Guid.NewGuid()
+            RefreshToken = Guid.NewGuid().ToString()
         };
 
         await _refreshSessionManager.Add(refreshSession, cancellationToken);
         //await _accountsDbContext.SaveChangesAsync(cancellationToken);
 
-        return refreshSession.RefreshToken;
+        return Guid.Parse(refreshSession.RefreshToken);
     }
 }

@@ -2,29 +2,32 @@
 using MailWave.Accounts.Domain.Models;
 using MailWave.SharedKernel.Shared;
 using MailWave.SharedKernel.Shared.Errors;
+using Microsoft.Extensions.Options;
 using MongoDB.Driver;
+using MongoDatabaseSettings = MailWave.Accounts.Infrastructure.Options.MongoDatabaseSettings;
 
 namespace MailWave.Accounts.Infrastructure.Managers;
 
 public class RefreshSessionManager: IRefreshSessionManager
 {
-    private readonly AccountDbContext _accountDbContext;
+    private readonly IMongoCollection<RefreshSession> _refreshSessionCollection;
 
-    public RefreshSessionManager(AccountDbContext accountDbContext)
+    public RefreshSessionManager(IMongoDatabase database, IOptions<MongoDatabaseSettings> settings)
     {
-        _accountDbContext = accountDbContext;
+        _refreshSessionCollection = database
+            .GetCollection<RefreshSession>(settings.Value.RefreshSessionsCollectionName);
     }
     
     
     public async Task Delete(RefreshSession refreshSession, CancellationToken cancellationToken = default)
     {
-        await _accountDbContext.RefreshSessionCollection.DeleteOneAsync(r => r.Id == refreshSession.Id,
+        await _refreshSessionCollection.DeleteOneAsync(r => r.Id == refreshSession.Id,
             cancellationToken);
     }
     
     public async Task<Result> Add(RefreshSession refreshSession, CancellationToken cancellationToken = default)
     {
-        await _accountDbContext.RefreshSessionCollection.InsertOneAsync(refreshSession, cancellationToken);
+        await _refreshSessionCollection.InsertOneAsync(refreshSession, cancellationToken);
 
         return Result.Success();
     }
@@ -32,7 +35,7 @@ public class RefreshSessionManager: IRefreshSessionManager
     public async Task<Result<RefreshSession>> GetByRefreshToken(Guid refreshToken, CancellationToken cancellationToken = default)
     {
         var refreshSessionToken =
-            await _accountDbContext.RefreshSessionCollection.Find(r => r.RefreshToken == refreshToken)
+            await _refreshSessionCollection.Find(r => Guid.Parse(r.RefreshToken) == refreshToken)
                 .ToListAsync(cancellationToken);
 
         if (refreshSessionToken.Count != 1)
