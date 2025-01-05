@@ -7,6 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\Shared\MailWave.Framework\MailWave.Framework.csproj" />
       <ProjectReference Include="..\MailWave.Mail.Application\MailWave.Mail.Application.csproj" />
       <ProjectReference Include="..\MailWave.Mail.Contracts\MailWave.Mail.Contracts.csproj" />
       <ProjectReference Include="..\MailWave.Mail.Infrastructure\MailWave.Mail.Infrastructure.csproj" />

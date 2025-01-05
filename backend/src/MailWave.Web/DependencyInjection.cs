@@ -1,7 +1,7 @@
 ﻿using MailWave.Accounts.Application;
-using MailWave.Accounts.Contracts.Messaging;
 using MailWave.Accounts.Infrastructure;
 using MailWave.Core.Models;
+using MailWave.Mail.Application;
 using MailWave.Mail.Application.Features.Consumers.GetUserCredentialsForMail;
 using MailWave.Mail.Controllers;
 using MailWave.Mail.Infrastructure;
@@ -23,6 +23,7 @@ public static class DependencyInjection
             .AddAccountInfrastructure(configuration)
             .AddMailInfrastructure(configuration)
             .AddMailControllers()
+            .AddMailApplication()
             .AddCore()
             .AddMessageBus(configuration);
 
@@ -58,7 +59,7 @@ public static class DependencyInjection
     
     private static IServiceCollection AddCore(this IServiceCollection services)
     {
-        services.AddScoped<MailCredentialsScopedData>();
+        services.AddSingleton<MailCredentialsScopedData>();
         
         return services;
     }

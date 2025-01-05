@@ -1,6 +1,7 @@
 ﻿using MailWave.Accounts.Contracts.Messaging;
 using MailWave.Core.Models;
 using MassTransit;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
 namespace MailWave.Mail.Application.Features.Consumers.GetUserCredentialsForMail;
@@ -26,7 +27,7 @@ public class GotUserCredentialsForMailEventConsumer: IConsumer<GotUserCredential
         _mailCredentials.Password = message.Password;
         
         _logger.LogInformation("Mail credentials are set");
-        
+
         return Task.CompletedTask;
     }
 }

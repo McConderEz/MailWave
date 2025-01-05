@@ -28,8 +28,8 @@ public static class MailKitExtensions
     {
         var uids = await folder.SearchAsync(SearchQuery.All, cancellationToken);
         
-        var startPosition = Math.Max(0, uids.Count - (page * pageSize) + pageSize);
-        var endPosition = Math.Max(0, uids.Count - (page * pageSize));
+        var startPosition = (page - 1) * pageSize;
+        var endPosition = Math.Min(uids.Count, startPosition + pageSize);
 
         var messages = new List<Letter>();
 

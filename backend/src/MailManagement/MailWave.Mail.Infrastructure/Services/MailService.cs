@@ -56,7 +56,7 @@ public class MailService : IMailService
             
             return Result.Success();
         }
-        catch(Exception ex)
+        catch
         {
             return Errors.MailErrors.ConnectionError();
         }
@@ -107,11 +107,11 @@ public class MailService : IMailService
             await client.DisconnectAsync(true,cancellationToken);
             
             foreach (var address in mail.To)
-                _logger.LogInformation("Email successfully sended to {to}", address);
+                _logger.LogInformation("Email successfully sent to {to}", address);
             
             return Result.Success();
         }
-        catch (Exception ex)
+        catch 
         {
             _logger.LogError("The email message was not sent");
             return Error.Failure("send.email.error","The email message was not sent");
@@ -140,7 +140,7 @@ public class MailService : IMailService
         {
             using var client = new ImapClient();
 
-            await client.ConnectAsync("", 0, cancellationToken: cancellationToken);
+            await client.ConnectAsync("imap.gmail.com", 993, cancellationToken: cancellationToken);
             await client.AuthenticateAsync(
                 mailCredentialsDto.Email, mailCredentialsDto.Password, cancellationToken);
 
@@ -156,7 +156,7 @@ public class MailService : IMailService
             
             return result;
         }
-        catch (Exception ex)
+        catch
         {
             _logger.LogError("Cannot receive email message");
 

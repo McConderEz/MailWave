@@ -1,7 +1,9 @@
-﻿using MailWave.Mail.Domain.Shared;
-using MailWave.Mail.Infrastructure.Services;
+﻿using MailKit;
+using MailWave.Mail.Domain.Shared;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using IMailService = MailWave.Mail.Application.MailService.IMailService;
+using MailService = MailWave.Mail.Infrastructure.Services.MailService;
 
 namespace MailWave.Mail.Infrastructure;
 
@@ -27,7 +29,8 @@ public static class DependencyInjection
    private static IServiceCollection AddServices(this IServiceCollection services)
    {
       services.AddScoped<MailService>();
-
+      services.AddScoped<IMailService,MailService>();
+      
       return services;
    }
 }
