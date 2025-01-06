@@ -8,7 +8,11 @@ using Microsoft.Extensions.Logging;
 
 namespace MailWave.Mail.Application.Features.Queries.GetMessagesFromFolderWithPagination;
 
-public class GetMessagesFromFolderWithPaginationHandler: IQueryHandler<List<Letter>,GetMessagesFromFolderWithPaginationQuery>
+/// <summary>
+/// Получение сообщений из папки с пагинацией
+/// </summary>
+public class GetMessagesFromFolderWithPaginationHandler:
+    IQueryHandler<List<Letter>,GetMessagesFromFolderWithPaginationQuery>
 {
     private readonly IValidator<GetMessagesFromFolderWithPaginationQuery> _validator;
     private readonly ILogger<GetMessagesFromFolderWithPaginationHandler> _logger;
@@ -24,7 +28,12 @@ public class GetMessagesFromFolderWithPaginationHandler: IQueryHandler<List<Lett
         _mailService = mailService;
     }
 
-
+    /// <summary>
+    /// Обработчик
+    /// </summary>
+    /// <param name="query">Запрос со всеми входными параметрами</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns>Список писем</returns>
     public async Task<Result<List<Letter>>> Handle(
         GetMessagesFromFolderWithPaginationQuery query,
         CancellationToken cancellationToken = default)

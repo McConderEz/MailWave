@@ -6,6 +6,7 @@ using MailWave.Core.DTOs;
 using MailWave.Mail.Domain.Entities;
 using MailWave.Mail.Domain.Shared;
 using MailWave.Mail.Infrastructure.Extensions;
+using MailWave.Mail.Infrastructure.Options;
 using MailWave.SharedKernel.Shared;
 using MailWave.SharedKernel.Shared.Errors;
 using Microsoft.Extensions.Logging;
@@ -141,7 +142,7 @@ public class MailService : IMailService
             await client.AuthenticateAsync(
                 mailCredentialsDto.Email, mailCredentialsDto.Password, cancellationToken);
 
-            var folder = await SelectFolder(selectedFolder, client, cancellationToken);
+            var folder = await SelectFolder(selectedFolder, mailCredentialsDto.Email ,client, cancellationToken);
 
             await folder.OpenAsync(FolderAccess.ReadWrite, cancellationToken);
 
@@ -160,43 +161,33 @@ public class MailService : IMailService
             return Error.Failure("email.receive.error","Cannot receive email message");
         }
     }
-    
+
     /// <summary>
     /// Метод для выбора папки с письмами
     /// </summary>
     /// <param name="selectedFolder">Выбранная папка</param>
     /// <param name="cancellationToken">Токен отмены</param>
+    /// <param name="userName">Имя пользователя для определения констант папок</param>
     /// <param name="client">Imap клиент</param>
     /// <returns>Интерфейс IMailFolder с выбранной папкой</returns>
     private async Task<IMailFolder> SelectFolder(
         EmailFolder selectedFolder,
+        string userName,
         ImapClient client,
         CancellationToken cancellationToken = default)
     {
-        /*var folder = await client.GetFolderAsync(selectedFolder switch
+        var mailFolderConstants = MailFolderConstants.Folder[userName.Split("@")[1].Split(".")[0]];
+        
+        var folder = await client.GetFolderAsync(selectedFolder switch
         { 
-            EmailFolder.Sent => SpecialFolder.Sent.ToString(),
-            EmailFolder.Drafts => SpecialFolder.Drafts.ToString(),
-            EmailFolder.Junk => SpecialFolder.Junk.ToString(),
-            EmailFolder.Trash => SpecialFolder.Trash.ToString(),
-            _ => client.Inbox.ToString()
+            EmailFolder.Sent => mailFolderConstants[1],
+            EmailFolder.Drafts => mailFolderConstants[2],
+            EmailFolder.Junk => mailFolderConstants[3],
+            EmailFolder.Trash => mailFolderConstants[4],
+            _ => mailFolderConstants[0]
         }, cancellationToken);
-        return folder;*/
-
-        var folders = client.GetFolders(client.PersonalNamespaces[0]);
         
-        var folderName = selectedFolder switch
-        {
-            EmailFolder.Sent => SpecialFolder.Sent.ToString(),
-            EmailFolder.Drafts => SpecialFolder.Drafts.ToString(),
-            EmailFolder.Junk => SpecialFolder.Junk.ToString(),
-            EmailFolder.Trash => SpecialFolder.Trash.ToString(),
-            _ => client.Inbox.ToString()
-        };
-        
-        var folder = await client.GetFolderAsync("[Gmail]/Отправленные", cancellationToken: cancellationToken);
-        
-        return null;
+        return folder;
     }
 
     /// <summary>
@@ -221,7 +212,7 @@ public class MailService : IMailService
             await client.AuthenticateAsync(
                 mailCredentialsDto.Email, mailCredentialsDto.Password, cancellationToken);
 
-            var folder = await SelectFolder(selectedFolder, client, cancellationToken);
+            var folder = await SelectFolder(selectedFolder, mailCredentialsDto.Email, client, cancellationToken);
 
             await folder.OpenAsync(FolderAccess.ReadWrite, cancellationToken);
             
@@ -266,7 +257,7 @@ public class MailService : IMailService
             await client.AuthenticateAsync(
                 mailCredentialsDto.Email, mailCredentialsDto.Password, cancellationToken);
 
-            var folder = await SelectFolder(selectedFolder, client, cancellationToken);
+            var folder = await SelectFolder(selectedFolder,mailCredentialsDto.Email, client, cancellationToken);
             
             await folder.OpenAsync(FolderAccess.ReadWrite, cancellationToken);
 
@@ -321,10 +312,10 @@ public class MailService : IMailService
             await client.AuthenticateAsync(
                 mailCredentialsDto.Email, mailCredentialsDto.Password, cancellationToken);
 
-            var folder = await SelectFolder(selectedFolder, client, cancellationToken);
+            var folder = await SelectFolder(selectedFolder, mailCredentialsDto.Email, client, cancellationToken);
             await folder.OpenAsync(FolderAccess.ReadWrite, cancellationToken);
             
-            var folderForMove = await SelectFolder(targetFolder, client, cancellationToken);
+            var folderForMove = await SelectFolder(targetFolder, mailCredentialsDto.Email, client, cancellationToken);
             await folderForMove.OpenAsync(FolderAccess.ReadWrite, cancellationToken);
 
             UniqueId? uId = (await folder.SearchAsync(SearchQuery.All, cancellationToken))

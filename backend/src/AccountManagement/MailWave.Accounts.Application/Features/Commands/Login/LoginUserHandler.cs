@@ -14,6 +14,9 @@ using Microsoft.Extensions.Logging;
 
 namespace MailWave.Accounts.Application.Features.Commands.Login;
 
+/// <summary>
+/// Авторизация
+/// </summary>
 public class LoginUserHandler: ICommandHandler<LoginUserCommand, LoginResponse>
 {
     private readonly ILogger<LoginUserHandler> _logger;
