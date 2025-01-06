@@ -10,15 +10,21 @@ public interface IMailService
     /// <summary>
     /// Метод отправки данных по почте
     /// </summary>
+    /// <param name="mailCredentialsDto">Данные учётной записи</param>
+    /// <param name="attachments">Вложения</param>
     /// <param name="letter">Письмо для отправки(адреса получателей, отправитель, основная информация)</param>
     /// <param name="cancellationToken">Токен отмены</param>
     /// <returns></returns>
     Task<Result> SendMessage(
-        MailCredentialsDto mailCredentialsDto,Letter letter, CancellationToken cancellationToken = default);
+        MailCredentialsDto mailCredentialsDto,
+        IEnumerable<Attachment>? attachments,
+        Letter letter,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Получения писем из папки
     /// </summary>
+    /// <param name="mailCredentialsDto">Данные учётной записи</param>
     /// <param name="selectedFolder">Папка, из которой получаем</param>
     /// <param name="page">Страница</param>
     /// <param name="pageSize">Размер страницы</param>
@@ -34,6 +40,7 @@ public interface IMailService
     /// <summary>
     /// Получение письма по идентификатору
     /// </summary>
+    /// <param name="mailCredentialsDto">Данные учётной записи</param>
     /// <param name="selectedFolder">Выбранная папка</param>
     /// <param name="messageId">Идентификатор письма uid</param>
     /// <param name="cancellationToken">Токен отмены</param>
@@ -47,6 +54,7 @@ public interface IMailService
     /// <summary>
     /// Удаление письма из выбранной папки по уникальному идентификатору
     /// </summary>
+    /// <param name="mailCredentialsDto">Данные учётной записи</param>
     /// <param name="selectedFolder">Выбранная папка</param>
     /// <param name="messageId">Идентификатор письма uid</param>
     /// <param name="cancellationToken">Токен отмены</param>
@@ -60,6 +68,7 @@ public interface IMailService
     /// <summary>
     /// Перемещение письма из выбранной папки в целевую по уникальному идентификатору 
     /// </summary>
+    /// <param name="mailCredentialsDto">Данные учётной записи</param>
     /// <param name="selectedFolder">Выбранная папка</param>
     /// <param name="targetFolder">Папка для перемещения</param>
     /// <param name="messageId">Идентификатор письма</param>

@@ -61,14 +61,16 @@ public class MailService : IMailService
     }
 
     /// <summary>
-    /// Метод отправки данных по почте
+    /// Метод отправки данных по почте с вложениями
     /// </summary>
     /// <param name="mailCredentialsDto">Данные учётной записи</param>
+    /// <param name="attachments">Вложения</param>
     /// <param name="letter">Письмо для отправки(адреса получателей, отправитель, основная информация)</param>
     /// <param name="cancellationToken">Токен отмены</param>
     /// <returns></returns>
     public async Task<Result> SendMessage(
         MailCredentialsDto mailCredentialsDto,
+        IEnumerable<Attachment>? attachments,
         Letter letter,
         CancellationToken cancellationToken = default)
     {
@@ -90,14 +92,29 @@ public class MailService : IMailService
 
         var body = new BodyBuilder { HtmlBody = letter.Body };
 
+        if (attachments is not null)
+        {
+            foreach (var attachment in attachments)
+            {
+                var mimePart = new MimePart("application/octet-stream")
+                {
+                    Content = new MimeContent(attachment.Content),
+                    ContentDisposition = new ContentDisposition(ContentDisposition.Attachment),
+                    ContentTransferEncoding = ContentEncoding.Base64,
+                    FileName = attachment.FileName
+                };
+                
+                body.Attachments.Add(mimePart);
+            }
+        }
+        
         mail.Body = body.ToMessageBody();
         mail.Subject = letter.Subject;
-
+        
         try
         {
             using var client = new SmtpClient();
-
-            //TODO: Создать хранение настроек
+            
             await client.ConnectSmtpAsync(mailCredentialsDto.Email, cancellationToken: cancellationToken);
             await client.AuthenticateAsync(
                 mailCredentialsDto.Email, mailCredentialsDto.Password, cancellationToken);

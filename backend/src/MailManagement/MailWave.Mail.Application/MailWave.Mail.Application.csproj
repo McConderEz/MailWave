@@ -19,7 +19,6 @@
     <ItemGroup>
       <Folder Include="Features\Commands\DeleteMessage\" />
       <Folder Include="Features\Commands\MoveMessage\" />
-      <Folder Include="Features\Commands\SendMessage\" />
     </ItemGroup>
 
 </Project>
