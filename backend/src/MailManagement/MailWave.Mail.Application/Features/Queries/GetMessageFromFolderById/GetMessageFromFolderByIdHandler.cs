@@ -6,53 +6,49 @@ using MailWave.Mail.Domain.Entities;
 using MailWave.SharedKernel.Shared;
 using Microsoft.Extensions.Logging;
 
-namespace MailWave.Mail.Application.Features.Queries.GetMessagesFromFolderWithPagination;
+namespace MailWave.Mail.Application.Features.Queries.GetMessageFromFolderById;
 
 /// <summary>
-/// Получение сообщений из папки с пагинацией
+/// Получение письма из папки по message id
 /// </summary>
-public class GetMessagesFromFolderWithPaginationHandler:
-    IQueryHandler<List<Letter>,GetMessagesFromFolderWithPaginationQuery>
+public class GetMessageFromFolderByIdHandler: IQueryHandler<Letter, GetMessageFromFolderByIdQuery>
 {
-    private readonly IValidator<GetMessagesFromFolderWithPaginationQuery> _validator;
-    private readonly ILogger<GetMessagesFromFolderWithPaginationHandler> _logger;
+    private readonly IValidator<GetMessageFromFolderByIdQuery> _validator;
+    private readonly ILogger<GetMessageFromFolderByIdHandler> _logger;
     private readonly IMailService _mailService;
 
-    public GetMessagesFromFolderWithPaginationHandler(
-        IValidator<GetMessagesFromFolderWithPaginationQuery> validator,
-        ILogger<GetMessagesFromFolderWithPaginationHandler> logger,
+    public GetMessageFromFolderByIdHandler(
+        IValidator<GetMessageFromFolderByIdQuery> validator,
+        ILogger<GetMessageFromFolderByIdHandler> logger,
         IMailService mailService)
     {
         _validator = validator;
         _logger = logger;
         _mailService = mailService;
     }
-
+    
     /// <summary>
     /// Обработчик
     /// </summary>
     /// <param name="query">Запрос со всеми входными параметрами</param>
     /// <param name="cancellationToken">Токен отмены</param>
     /// <returns>Список писем</returns>
-    public async Task<Result<List<Letter>>> Handle(
-        GetMessagesFromFolderWithPaginationQuery query,
-        CancellationToken cancellationToken = default)
+    public async Task<Result<Letter>> Handle(GetMessageFromFolderByIdQuery query, CancellationToken cancellationToken = default)
     {
         var validationResult = await _validator.ValidateAsync(query, cancellationToken);
         if (!validationResult.IsValid)
             return validationResult.ToErrorList();
 
-        var messages = await _mailService.GetMessages(
+        var messages = await _mailService.GetMessage(
             query.MailCredentialsDto,
             query.EmailFolder,
-            query.Page,
-            query.PageSize,
+            query.MessageId,
             cancellationToken);
 
         if (messages.IsFailure)
             return messages.Errors;
 
-        _logger.LogInformation("User {email} got messages from folder {folder}",
+        _logger.LogInformation("User {email} got message from folder {folder}",
             query.MailCredentialsDto.Email, query.EmailFolder);
         
         return messages;
