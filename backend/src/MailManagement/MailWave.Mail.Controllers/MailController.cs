@@ -2,6 +2,7 @@
 using MailWave.Core.Models;
 using MailWave.Framework;
 using MailWave.Mail.Application.DTOs;
+using MailWave.Mail.Application.Features.Commands.DeleteMessage;
 using MailWave.Mail.Application.Features.Commands.MoveMessage;
 using MailWave.Mail.Application.Features.Commands.SendMessage;
 using MailWave.Mail.Application.Features.Queries.GetMessageFromFolderById;
@@ -105,6 +106,27 @@ public class MailController: ApplicationController
             new MailCredentialsDto(mailCredentials.Email, mailCredentials.Password),
             request.SelectedFolder,
             request.TargetFolder,
+            (uint)messageId);
+
+        var result = await handler.Handle(command, cancellationToken);
+
+        if (result.IsFailure)
+            result.Errors.ToResponse();
+
+        return Ok(result);
+    }
+    
+    [HttpPost("{messageId:int}/deletion-message")]
+    public async Task<IActionResult> DeleteMessage(
+        [FromRoute] int messageId,
+        [FromForm] DeleteMessageRequest request,
+        [FromServices] MailCredentialsScopedData mailCredentials,
+        [FromServices] DeleteMessageHandler handler,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new DeleteMessageCommand(
+            new MailCredentialsDto(mailCredentials.Email, mailCredentials.Password),
+            request.SelectedFolder,
             (uint)messageId);
 
         var result = await handler.Handle(command, cancellationToken);

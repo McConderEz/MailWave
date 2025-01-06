@@ -5,20 +5,20 @@ using MailWave.Mail.Application.MailService;
 using MailWave.SharedKernel.Shared;
 using Microsoft.Extensions.Logging;
 
-namespace MailWave.Mail.Application.Features.Commands.MoveMessage;
+namespace MailWave.Mail.Application.Features.Commands.DeleteMessage;
 
 /// <summary>
-/// Перемещение письма из одной папки в другую
+/// Удаление письма из почты
 /// </summary>
-public class MoveMessageHandler: ICommandHandler<MoveMessageCommand>
+public class DeleteMessageHandler : ICommandHandler<DeleteMessageCommand>
 {
-    private readonly IValidator<MoveMessageCommand> _validator;
-    private readonly ILogger<MoveMessageHandler> _logger;
+    private readonly IValidator<DeleteMessageCommand> _validator;
+    private readonly ILogger<DeleteMessageHandler> _logger;
     private readonly IMailService _mailService;
 
-    public MoveMessageHandler(
-        IValidator<MoveMessageCommand> validator,
-        ILogger<MoveMessageHandler> logger,
+    public DeleteMessageHandler(
+        IValidator<DeleteMessageCommand> validator,
+        ILogger<DeleteMessageHandler> logger,
         IMailService mailService)
     {
         _validator = validator;
@@ -32,23 +32,22 @@ public class MoveMessageHandler: ICommandHandler<MoveMessageCommand>
     /// <param name="command">Команда с входными параметрами</param>
     /// <param name="cancellationToken">Токен отмены</param>
     /// <returns></returns>
-    public async Task<Result> Handle(MoveMessageCommand command, CancellationToken cancellationToken = default)
+    public async Task<Result> Handle(DeleteMessageCommand command, CancellationToken cancellationToken = default)
     {
         var validationResult = await _validator.ValidateAsync(command, cancellationToken);
         if (!validationResult.IsValid)
             return validationResult.ToErrorList();
         
-        var messages = await _mailService.MoveMessage(
+        var messages = await _mailService.DeleteMessage(
             command.MailCredentialsDto,
             command.SelectedFolder,
-            command.TargetFolder,
             command.MessageId,
             cancellationToken);
 
         if (messages.IsFailure)
             return messages.Errors;
 
-        _logger.LogInformation("User moved message");
+        _logger.LogInformation("User deleted message");
         
         return Result.Success();
     }

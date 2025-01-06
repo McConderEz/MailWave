@@ -62,7 +62,7 @@ public class SendMessageHandler: ICommandHandler<SendMessageCommand>
         if (messages.IsFailure)
             return messages.Errors;
 
-        _logger.LogInformation("User send message");
+        _logger.LogInformation("User sent message");
         
         return Result.Success();
     }

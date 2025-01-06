@@ -3,11 +3,11 @@ using MailWave.Core.Validators;
 using MailWave.Mail.Domain.Constraints;
 using MailWave.SharedKernel.Shared.Errors;
 
-namespace MailWave.Mail.Application.Features.Commands.MoveMessage;
+namespace MailWave.Mail.Application.Features.Commands.DeleteMessage;
 
-public class MoveMessageValidator: AbstractValidator<MoveMessageCommand>
+public class DeleteMessageValidator : AbstractValidator<DeleteMessageCommand>
 {
-    public MoveMessageValidator()
+    public DeleteMessageValidator()
     {
         RuleFor(g => g.MailCredentialsDto.Email)
             .Matches(Constraints.EMAIL_REGEX_PATTERN)
