@@ -1,5 +1,8 @@
 ﻿using MailKit;
+using MailKit.Net.Imap;
+using MailKit.Net.Smtp;
 using MailKit.Search;
+using MailWave.Core.DTOs;
 using MailWave.Mail.Domain.Entities;
 using MailWave.SharedKernel.Shared;
 using MailWave.SharedKernel.Shared.Errors;
@@ -12,6 +15,16 @@ namespace MailWave.Mail.Infrastructure.Extensions;
 /// </summary>
 public static class MailKitExtensions
 {
+    /// <summary>
+    /// Порт для подключения к SMTP серверу
+    /// </summary>
+    private static readonly int _smtpPort = 587;
+    
+    /// <summary>
+    /// Порт для подключения к IMAP серверу
+    /// </summary>
+    private static readonly int _imapPort = 993;
+    
     /// <summary>
     /// Получение всех сообщений из папки
     /// </summary>
@@ -92,5 +105,42 @@ public static class MailKitExtensions
         }
 
         return letter;
+    }
+
+
+    /// <summary>
+    /// Подключение к smtp серверу с автоматическим подбором хоста и порта
+    /// </summary>
+    /// <param name="client">Объект smtp клиента</param>
+    /// <param name="userName">Имя пользователя(почта)</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    public static async Task ConnectSmtpAsync(
+        this SmtpClient client,
+        string userName,
+        CancellationToken cancellationToken = default)
+    {
+        var connectionData = userName.Split("@")[1].Split(".");
+
+        var host = "smtp" + "." + connectionData[0] + "." + connectionData[1];
+
+        await client.ConnectAsync(host, _smtpPort, cancellationToken: cancellationToken);
+    }
+    
+    /// <summary>
+    /// Подключение к imap серверу с автоматическим подбором хоста и порта
+    /// </summary>
+    /// <param name="client">Объект imap клиента</param>
+    /// <param name="userName">Имя пользователя(почта)</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    public static async Task ConnectImapAsync(
+        this ImapClient client,
+        string userName,
+        CancellationToken cancellationToken = default)
+    {
+        var connectionData = userName.Split("@")[1].Split(".");
+
+        var host = "imap" + "." + connectionData[0] + "." + connectionData[1];
+
+        await client.ConnectAsync(host, _imapPort, cancellationToken: cancellationToken);
     }
 }

@@ -1,7 +1,7 @@
 ﻿using MailWave.Core.DTOs;
 using MailWave.Mail.Domain.Entities;
 using MailWave.SharedKernel.Shared;
-using EmailFolder = MailWave.Mail.Domain.Constraints.Constraints.EmailFolder;
+using EmailFolder = MailWave.SharedKernel.Shared.Constraints.EmailFolder;
 
 namespace MailWave.Mail.Application.MailService;
 

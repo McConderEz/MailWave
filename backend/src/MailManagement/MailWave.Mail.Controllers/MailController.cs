@@ -3,7 +3,7 @@ using MailWave.Core.Models;
 using MailWave.Framework;
 using MailWave.Mail.Application.Features.Queries.GetMessagesFromFolderWithPagination;
 using MailWave.Mail.Contracts.Requests;
-using MailWave.Mail.Domain.Constraints;
+using MailWave.SharedKernel.Shared;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -21,7 +21,7 @@ public class MailController: ApplicationController
     {
         var query = new GetMessagesFromFolderWithPaginationQuery(
             new MailCredentialsDto(mailCredentials.Email, mailCredentials.Password),
-            Constraints.EmailFolder.Inbox,
+            request.EmailFolder,
             request.Page,
             request.PageSize);
 

@@ -17,7 +17,10 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Features\Commands\" />
+      <Folder Include="Features\Commands\DeleteMessage\" />
+      <Folder Include="Features\Commands\MoveMessage\" />
+      <Folder Include="Features\Commands\SendMessage\" />
+      <Folder Include="Features\Queries\GetMessageFromFolderById\" />
     </ItemGroup>
 
 </Project>

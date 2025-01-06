@@ -11,7 +11,7 @@ using MailWave.SharedKernel.Shared.Errors;
 using Microsoft.Extensions.Logging;
 using MimeKit;
 using IMailService = MailWave.Mail.Application.MailService.IMailService;
-using EmailFolder = MailWave.Mail.Domain.Constraints.Constraints.EmailFolder;
+using EmailFolder = MailWave.SharedKernel.Shared.Constraints.EmailFolder;
 
 namespace MailWave.Mail.Infrastructure.Services;
 
@@ -20,18 +20,15 @@ namespace MailWave.Mail.Infrastructure.Services;
 /// </summary>
 public class MailService : IMailService
 {
-   // private readonly MailOptions _mailOptions;
     private readonly ILogger<MailService> _logger;
     private readonly EmailValidator _validator;
 
     //TODO: Все письма при получении пока что не проставляют false/true в IsCrypted/IsSigned
     
     public MailService(
-        //IOptions<MailOptions> mailOptions,
         ILogger<MailService> logger,
         EmailValidator validator)
     {
-        //_mailOptions = mailOptions.Value;
         _logger = logger;
         _validator = validator;
     }
@@ -50,7 +47,7 @@ public class MailService : IMailService
         {
             using var client = new SmtpClient();
 
-            await client.ConnectAsync("smtp.gmail.com", 587, cancellationToken: cancellationToken);
+            await client.ConnectSmtpAsync(userName, cancellationToken: cancellationToken);
             await client.AuthenticateAsync(userName, password, cancellationToken);
             await client.DisconnectAsync(true, cancellationToken);
             
@@ -100,7 +97,7 @@ public class MailService : IMailService
             using var client = new SmtpClient();
 
             //TODO: Создать хранение настроек
-            await client.ConnectAsync("smtp.gmail.com", 587, cancellationToken: cancellationToken);
+            await client.ConnectSmtpAsync(mailCredentialsDto.Email, cancellationToken: cancellationToken);
             await client.AuthenticateAsync(
                 mailCredentialsDto.Email, mailCredentialsDto.Password, cancellationToken);
             await client.SendAsync(mail, cancellationToken);
@@ -140,7 +137,7 @@ public class MailService : IMailService
         {
             using var client = new ImapClient();
 
-            await client.ConnectAsync("imap.gmail.com", 993, cancellationToken: cancellationToken);
+            await client.ConnectImapAsync(mailCredentialsDto.Email, cancellationToken: cancellationToken);
             await client.AuthenticateAsync(
                 mailCredentialsDto.Email, mailCredentialsDto.Password, cancellationToken);
 
@@ -176,7 +173,7 @@ public class MailService : IMailService
         ImapClient client,
         CancellationToken cancellationToken = default)
     {
-        var folder = await client.GetFolderAsync(selectedFolder switch
+        /*var folder = await client.GetFolderAsync(selectedFolder switch
         { 
             EmailFolder.Sent => SpecialFolder.Sent.ToString(),
             EmailFolder.Drafts => SpecialFolder.Drafts.ToString(),
@@ -184,7 +181,22 @@ public class MailService : IMailService
             EmailFolder.Trash => SpecialFolder.Trash.ToString(),
             _ => client.Inbox.ToString()
         }, cancellationToken);
-        return folder;
+        return folder;*/
+
+        var folders = client.GetFolders(client.PersonalNamespaces[0]);
+        
+        var folderName = selectedFolder switch
+        {
+            EmailFolder.Sent => SpecialFolder.Sent.ToString(),
+            EmailFolder.Drafts => SpecialFolder.Drafts.ToString(),
+            EmailFolder.Junk => SpecialFolder.Junk.ToString(),
+            EmailFolder.Trash => SpecialFolder.Trash.ToString(),
+            _ => client.Inbox.ToString()
+        };
+        
+        var folder = await client.GetFolderAsync("[Gmail]/Отправленные", cancellationToken: cancellationToken);
+        
+        return null;
     }
 
     /// <summary>
@@ -205,7 +217,7 @@ public class MailService : IMailService
         {
             using var client = new ImapClient();
 
-            await client.ConnectAsync("", 0, cancellationToken: cancellationToken);
+            await client.ConnectImapAsync(mailCredentialsDto.Email, cancellationToken: cancellationToken);
             await client.AuthenticateAsync(
                 mailCredentialsDto.Email, mailCredentialsDto.Password, cancellationToken);
 
@@ -250,7 +262,7 @@ public class MailService : IMailService
         {
             using var client = new ImapClient();
             
-            await client.ConnectAsync("", 0, cancellationToken: cancellationToken);
+            await client.ConnectImapAsync(mailCredentialsDto.Email, cancellationToken: cancellationToken);
             await client.AuthenticateAsync(
                 mailCredentialsDto.Email, mailCredentialsDto.Password, cancellationToken);
 
@@ -305,7 +317,7 @@ public class MailService : IMailService
         {
             using var client = new ImapClient();
             
-            await client.ConnectAsync("", 0, cancellationToken: cancellationToken);
+            await client.ConnectImapAsync(mailCredentialsDto.Email, cancellationToken: cancellationToken);
             await client.AuthenticateAsync(
                 mailCredentialsDto.Email, mailCredentialsDto.Password, cancellationToken);
 
