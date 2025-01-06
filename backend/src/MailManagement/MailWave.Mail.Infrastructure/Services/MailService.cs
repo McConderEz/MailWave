@@ -332,11 +332,10 @@ public class MailService : IMailService
             var folder = await SelectFolder(selectedFolder, mailCredentialsDto.Email, client, cancellationToken);
             await folder.OpenAsync(FolderAccess.ReadWrite, cancellationToken);
             
-            var folderForMove = await SelectFolder(targetFolder, mailCredentialsDto.Email, client, cancellationToken);
-            await folderForMove.OpenAsync(FolderAccess.ReadWrite, cancellationToken);
-
             UniqueId? uId = (await folder.SearchAsync(SearchQuery.All, cancellationToken))
                 .FirstOrDefault(u => u.Id == messageId);
+            
+            var folderForMove = await SelectFolder(targetFolder, mailCredentialsDto.Email, client, cancellationToken);
 
             if (uId is null)
                 return Errors.General.NotFound();
