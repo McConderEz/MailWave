@@ -8,7 +8,6 @@ builder.Services.AddControllers();
 
 builder.Services.ConfigureWeb(builder.Configuration);
 
-
 var app = builder.Build();
 
 app.UseExceptionMiddleware();

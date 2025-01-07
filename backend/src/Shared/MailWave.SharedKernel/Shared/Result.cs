@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using MailWave.SharedKernel.Shared.Errors;
 
 namespace MailWave.SharedKernel.Shared;

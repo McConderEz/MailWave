@@ -1,4 +1,5 @@
 ﻿using MailWave.Mail.Domain.Shared;
+using MailWave.Mail.Infrastructure.Dispatchers;
 using MailWave.Mail.Infrastructure.Repositories;
 using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Configuration;
@@ -17,8 +18,16 @@ public static class DependencyInjection
          .AddServices()
          .AddValidators()
          .AddDatabase(configuration)
-         .AddRedisCache(configuration);
+         .AddRedisCache(configuration)
+         .AddDispatchers();
       
+      return services;
+   }
+
+   private static IServiceCollection AddDispatchers(this IServiceCollection services)
+   {
+      services.AddSingleton<MailClientDispatcher>();
+
       return services;
    }
 
@@ -55,8 +64,8 @@ public static class DependencyInjection
          
          options.DefaultEntryOptions = new HybridCacheEntryOptions
          {
-            Expiration = TimeSpan.FromMinutes(30),
-            LocalCacheExpiration = TimeSpan.FromMinutes(30)
+            Expiration = TimeSpan.FromMinutes(3),
+            LocalCacheExpiration = TimeSpan.FromMinutes(3)
          };
       });
       #pragma warning restore EXTEXP0018

@@ -2,11 +2,9 @@
 using MailKit.Net.Imap;
 using MailKit.Net.Smtp;
 using MailKit.Search;
-using MailWave.Core.DTOs;
 using MailWave.Mail.Domain.Entities;
 using MailWave.SharedKernel.Shared;
 using MailWave.SharedKernel.Shared.Errors;
-using MimeKit;
 
 namespace MailWave.Mail.Infrastructure.Extensions;
 
@@ -54,7 +52,8 @@ public static class MailKitExtensions
                 From = message.From.ToString(),
                 To = message.To.Select(t => t.Name).ToList(),
                 Subject = message.Subject,
-                Date = message.Date.DateTime
+                Date = message.Date.UtcDateTime,
+                Folder = folder.Name
             });
         }
 
@@ -91,7 +90,8 @@ public static class MailKitExtensions
             From = message.From.ToString(),
             To = message.To.Select(t => t.Name).ToList(),
             Subject = message.Subject,
-            Date = message.Date.DateTime
+            Date = message.Date.UtcDateTime,
+            Folder = folder.Name
         };
             
         if (message.Attachments.Count() != 0)

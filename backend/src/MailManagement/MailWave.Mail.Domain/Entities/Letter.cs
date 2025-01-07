@@ -1,10 +1,16 @@
-﻿namespace MailWave.Mail.Domain.Entities;
+﻿using System.Text.Json.Serialization;
+
+namespace MailWave.Mail.Domain.Entities;
 
 /// <summary>
 /// Сущность электронного письма
 /// </summary>
 public class Letter
 {
+    //Redis caching
+    [JsonConstructor]
+    public Letter(){}
+    
     /// <summary>
     /// Уникальный идентификатор
     /// </summary>
@@ -34,6 +40,11 @@ public class Letter
     /// Тема письма
     /// </summary>
     public string Subject { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Папка
+    /// </summary>
+    public string Folder { get; set; }
     
     /// <summary>
     /// Дата отправки письма

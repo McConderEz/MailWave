@@ -5,6 +5,7 @@ using MailKit.Search;
 using MailWave.Core.DTOs;
 using MailWave.Mail.Domain.Entities;
 using MailWave.Mail.Domain.Shared;
+using MailWave.Mail.Infrastructure.Dispatchers;
 using MailWave.Mail.Infrastructure.Extensions;
 using MailWave.Mail.Infrastructure.Options;
 using MailWave.Mail.Infrastructure.Repositories;
@@ -28,6 +29,7 @@ public class MailService : IMailService
     private readonly UnitOfWork _unitOfWork;
     private readonly HybridCache _hybridCache;
     private readonly EmailValidator _validator;
+    private readonly MailClientDispatcher _dispatcher;
 
     //TODO: Все письма при получении пока что не проставляют false/true в IsCrypted/IsSigned
     
@@ -36,13 +38,15 @@ public class MailService : IMailService
         EmailValidator validator,
         LetterRepository repository,
         UnitOfWork unitOfWork,
-        HybridCache hybridCache)
+        HybridCache hybridCache,
+        MailClientDispatcher dispatcher)
     {
         _logger = logger;
         _validator = validator;
         _repository = repository;
         _unitOfWork = unitOfWork;
         _hybridCache = hybridCache;
+        _dispatcher = dispatcher;
     }
 
     /// <summary>
@@ -110,13 +114,10 @@ public class MailService : IMailService
         
         try
         {
-            using var client = new SmtpClient();
-            
-            await client.ConnectSmtpAsync(mailCredentialsDto.Email, cancellationToken: cancellationToken);
-            await client.AuthenticateAsync(
+            var client = await _dispatcher.GetSmtpClientAsync(
                 mailCredentialsDto.Email, mailCredentialsDto.Password, cancellationToken);
+            
             await client.SendAsync(mail, cancellationToken);
-            await client.DisconnectAsync(true,cancellationToken);
             
             foreach (var address in mail.To)
                 _logger.LogInformation("Email successfully sent to {to}", address);
@@ -170,28 +171,56 @@ public class MailService : IMailService
         int pageSize,
         CancellationToken cancellationToken = default)
     {
+        var transaction = await _unitOfWork.BeginTransaction(cancellationToken);
+        
         try
         {
-            using var client = new ImapClient();
-
-            await client.ConnectImapAsync(mailCredentialsDto.Email, cancellationToken: cancellationToken);
-            await client.AuthenticateAsync(
+            
+            var client = await _dispatcher.GetImapClientAsync(
                 mailCredentialsDto.Email, mailCredentialsDto.Password, cancellationToken);
 
             var folder = await SelectFolder(selectedFolder, mailCredentialsDto.Email ,client, cancellationToken);
 
             await folder.OpenAsync(FolderAccess.ReadWrite, cancellationToken);
-
-            var result = await folder.GetMessagesAsync(page, pageSize, cancellationToken);
             
-            await client.DisconnectAsync(true,cancellationToken);
+            var lettersCache = await _hybridCache.GetOrCreateAsync(
+                $"letters_{selectedFolder.ToString()}_{page}",
+                async cancel =>
+                {
+                    var letters = await _repository.GetByFolder(
+                        folder.Name, page, pageSize, cancellationToken);
+
+                    if (letters.IsFailure)
+                        return new List<Letter>();
+
+                    if (letters.Value.Count != 0)
+                        return letters.Value;
+                    
+                    var lettersFromFolder = await folder.GetMessagesAsync(page, pageSize, cancellationToken);
+                    
+                    await _repository.Add(lettersFromFolder, cancellationToken);
+                    
+                    return lettersFromFolder;
+                },
+                cancellationToken: cancellationToken);
+            
+            if (lettersCache.Count == 0)
+                return Errors.General.Null();
+
+            await folder.CloseAsync(true, cancellationToken);
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+             
+            transaction.Commit();
             
             _logger.LogInformation("Got all letters from folder {folder}", selectedFolder.ToString());
             
-            return result;
+            return lettersCache;
         }
         catch
         {
+            transaction.Rollback();
+            
             _logger.LogError("Cannot receive email message");
 
             return Error.Failure("email.receive.error","Cannot receive email message");
@@ -240,12 +269,11 @@ public class MailService : IMailService
         uint messageId,
         CancellationToken cancellationToken = default)
     {
+        var transaction = await _unitOfWork.BeginTransaction(cancellationToken);
+        
         try
         {
-            using var client = new ImapClient();
-
-            await client.ConnectImapAsync(mailCredentialsDto.Email, cancellationToken: cancellationToken);
-            await client.AuthenticateAsync(
+            var client = await _dispatcher.GetImapClientAsync(
                 mailCredentialsDto.Email, mailCredentialsDto.Password, cancellationToken);
 
             var folder = await SelectFolder(selectedFolder, mailCredentialsDto.Email, client, cancellationToken);
@@ -254,10 +282,40 @@ public class MailService : IMailService
             
             var letter = await folder.GetMessageWithAttachmentsAsync(messageId, cancellationToken);
 
-            await client.DisconnectAsync(true, cancellationToken);
+            var letterCache = await _hybridCache.GetOrCreateAsync(
+                $"letters_{messageId}_{selectedFolder.ToString()}",
+                async cancel =>
+                {
+                    var letterFromRepository = await _repository.GetById(
+                        folder.Name, messageId, cancellationToken);
+    
+                    
+                    if (letterFromRepository.IsSuccess)
+                        return letterFromRepository;
+                    
+                    var letterFromFolder = await folder
+                        .GetMessageWithAttachmentsAsync(messageId, cancellationToken);
+
+                    if (letterFromFolder.IsFailure)
+                        return letterFromFolder.Errors;
+                    
+                    await _repository.Add([letterFromFolder.Value], cancellationToken);
+                    
+                    return letterFromFolder;
+                },
+                cancellationToken: cancellationToken);
+
+            if (letterCache.IsFailure)
+                return letter.Errors;
+            
+            await folder.CloseAsync(true, cancellationToken);
             
             if (letter.IsFailure)
                 return letter.Errors;
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            transaction.Commit();
             
             _logger.LogInformation("Got letter from folder {folder} with message id {messageId}",
                 selectedFolder.ToString(), messageId);
@@ -266,7 +324,10 @@ public class MailService : IMailService
         }
         catch (Exception ex)
         {
+            transaction.Rollback();
+            
             _logger.LogError("Cannot get message with id {messageId}. Ex. message: {ex}", messageId, ex.Message);
+            
             return Error.Failure("message.receive.error","Cannot get message");
         }
     }
@@ -285,12 +346,11 @@ public class MailService : IMailService
         uint messageId,
         CancellationToken cancellationToken = default)
     {
+        var transaction = await _unitOfWork.BeginTransaction(cancellationToken);
+        
         try
         {
-            using var client = new ImapClient();
-            
-            await client.ConnectImapAsync(mailCredentialsDto.Email, cancellationToken: cancellationToken);
-            await client.AuthenticateAsync(
+            var client = await _dispatcher.GetImapClientAsync(
                 mailCredentialsDto.Email, mailCredentialsDto.Password, cancellationToken);
 
             var folder = await SelectFolder(selectedFolder,mailCredentialsDto.Email, client, cancellationToken);
@@ -303,6 +363,10 @@ public class MailService : IMailService
             if (uId is null)
                 return Errors.General.NotFound();
 
+            await _repository.Delete(folder.Name, messageId, cancellationToken);
+
+            await _hybridCache.RemoveAsync($"letters_{messageId}_{selectedFolder.ToString()}", cancellationToken);
+
             var result = await folder.StoreAsync(
                 uId.Value,
                 new StoreFlagsRequest(StoreAction.Add, MessageFlags.Deleted) { Silent = true },
@@ -312,6 +376,11 @@ public class MailService : IMailService
                 return Error.Failure("delete.mark.error","Cannot marked message as deleted");
 
             await folder.ExpungeAsync(cancellationToken);
+            await folder.CloseAsync(true, cancellationToken);
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            
+            transaction.Commit();
             
             _logger.LogInformation("Marked message was deleted");
 
@@ -319,6 +388,8 @@ public class MailService : IMailService
         }
         catch (Exception ex)
         {
+            transaction.Rollback();
+            
             _logger.LogError("Cannot deleted message. Ex. message: {ex}", ex.Message);
             return Error.Failure("delete.message.error","Cannot marked message as deleted");
         }
@@ -342,10 +413,7 @@ public class MailService : IMailService
     {
         try
         {
-            using var client = new ImapClient();
-            
-            await client.ConnectImapAsync(mailCredentialsDto.Email, cancellationToken: cancellationToken);
-            await client.AuthenticateAsync(
+            var client = await _dispatcher.GetImapClientAsync(
                 mailCredentialsDto.Email, mailCredentialsDto.Password, cancellationToken);
 
             var folder = await SelectFolder(selectedFolder, mailCredentialsDto.Email, client, cancellationToken);
@@ -359,7 +427,13 @@ public class MailService : IMailService
             if (uId is null)
                 return Errors.General.NotFound();
 
+            await _repository.Delete(folder.Name, messageId, cancellationToken);
+            
             await folder.MoveToAsync(uId.Value, folderForMove, cancellationToken);
+
+            await folder.CloseAsync(true, cancellationToken);
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
             
             _logger.LogInformation(
                 "Message with id {messageId} was moved from folder {previousFolder} to folder {targetFolder}",
