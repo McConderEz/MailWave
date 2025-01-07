@@ -10,6 +10,7 @@ using MailWave.Mail.Infrastructure.Options;
 using MailWave.Mail.Infrastructure.Repositories;
 using MailWave.SharedKernel.Shared;
 using MailWave.SharedKernel.Shared.Errors;
+using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Logging;
 using MimeKit;
 using IMailService = MailWave.Mail.Application.MailService.IMailService;
@@ -25,6 +26,7 @@ public class MailService : IMailService
     private readonly ILogger<MailService> _logger;
     private readonly LetterRepository _repository;
     private readonly UnitOfWork _unitOfWork;
+    private readonly HybridCache _hybridCache;
     private readonly EmailValidator _validator;
 
     //TODO: Все письма при получении пока что не проставляют false/true в IsCrypted/IsSigned
@@ -33,12 +35,14 @@ public class MailService : IMailService
         ILogger<MailService> logger,
         EmailValidator validator,
         LetterRepository repository,
-        UnitOfWork unitOfWork)
+        UnitOfWork unitOfWork,
+        HybridCache hybridCache)
     {
         _logger = logger;
         _validator = validator;
         _repository = repository;
         _unitOfWork = unitOfWork;
+        _hybridCache = hybridCache;
     }
 
     /// <summary>

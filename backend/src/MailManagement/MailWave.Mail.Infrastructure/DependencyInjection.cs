@@ -1,5 +1,6 @@
 ﻿using MailWave.Mail.Domain.Shared;
 using MailWave.Mail.Infrastructure.Repositories;
+using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using IMailService = MailWave.Mail.Application.MailService.IMailService;
@@ -15,7 +16,8 @@ public static class DependencyInjection
       services
          .AddServices()
          .AddValidators()
-         .AddDatabase(configuration);
+         .AddDatabase(configuration)
+         .AddRedisCache(configuration);
       
       return services;
    }
@@ -37,7 +39,29 @@ public static class DependencyInjection
       
       return services;
    }
-    
+
+   private static IServiceCollection AddRedisCache(this IServiceCollection services, IConfiguration configuration)
+   {
+      services.AddStackExchangeRedisCache(options =>
+      {
+         options.Configuration = configuration.GetConnectionString("Redis");
+      });
+      
+      #pragma warning disable EXTEXP0018
+      services.AddHybridCache(options =>
+      {
+         options.MaximumPayloadBytes = 1024 * 1024 * 10; 
+         options.MaximumKeyLength = 512;
+         
+         options.DefaultEntryOptions = new HybridCacheEntryOptions
+         {
+            Expiration = TimeSpan.FromMinutes(30),
+            LocalCacheExpiration = TimeSpan.FromMinutes(30)
+         };
+      });
+      #pragma warning restore EXTEXP0018
+      return services;
+   }
    
    private static IServiceCollection AddServices(this IServiceCollection services)
    {
