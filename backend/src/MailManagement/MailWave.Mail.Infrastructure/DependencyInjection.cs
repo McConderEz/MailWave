@@ -1,5 +1,5 @@
-﻿using MailKit;
-using MailWave.Mail.Domain.Shared;
+﻿using MailWave.Mail.Domain.Shared;
+using MailWave.Mail.Infrastructure.Repositories;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using IMailService = MailWave.Mail.Application.MailService.IMailService;
@@ -14,7 +14,8 @@ public static class DependencyInjection
    {
       services
          .AddServices()
-         .AddValidators();
+         .AddValidators()
+         .AddDatabase(configuration);
       
       return services;
    }
@@ -25,6 +26,18 @@ public static class DependencyInjection
 
       return services;
    }
+
+   private static IServiceCollection AddDatabase(this IServiceCollection services, IConfiguration configuration)
+   {
+      services.AddScoped<ApplicationDbContext>();
+
+      services.AddScoped<LetterRepository>();
+
+      services.AddScoped<UnitOfWork>();
+      
+      return services;
+   }
+    
    
    private static IServiceCollection AddServices(this IServiceCollection services)
    {

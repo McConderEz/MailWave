@@ -40,7 +40,6 @@ public static class MailKitExtensions
         CancellationToken cancellationToken = default)
     {
         var uids = await folder.SearchAsync(SearchQuery.All, cancellationToken);
-        
         var startPosition = (page - 1) * pageSize;
         var endPosition = Math.Min(uids.Count, startPosition + pageSize);
 

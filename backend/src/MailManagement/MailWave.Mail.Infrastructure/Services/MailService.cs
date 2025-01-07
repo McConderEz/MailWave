@@ -7,6 +7,7 @@ using MailWave.Mail.Domain.Entities;
 using MailWave.Mail.Domain.Shared;
 using MailWave.Mail.Infrastructure.Extensions;
 using MailWave.Mail.Infrastructure.Options;
+using MailWave.Mail.Infrastructure.Repositories;
 using MailWave.SharedKernel.Shared;
 using MailWave.SharedKernel.Shared.Errors;
 using Microsoft.Extensions.Logging;
@@ -22,16 +23,22 @@ namespace MailWave.Mail.Infrastructure.Services;
 public class MailService : IMailService
 {
     private readonly ILogger<MailService> _logger;
+    private readonly LetterRepository _repository;
+    private readonly UnitOfWork _unitOfWork;
     private readonly EmailValidator _validator;
 
     //TODO: Все письма при получении пока что не проставляют false/true в IsCrypted/IsSigned
     
     public MailService(
         ILogger<MailService> logger,
-        EmailValidator validator)
+        EmailValidator validator,
+        LetterRepository repository,
+        UnitOfWork unitOfWork)
     {
         _logger = logger;
         _validator = validator;
+        _repository = repository;
+        _unitOfWork = unitOfWork;
     }
 
     /// <summary>
@@ -92,21 +99,7 @@ public class MailService : IMailService
 
         var body = new BodyBuilder { HtmlBody = letter.Body };
 
-        if (attachments is not null)
-        {
-            foreach (var attachment in attachments)
-            {
-                var mimePart = new MimePart("application/octet-stream")
-                {
-                    Content = new MimeContent(attachment.Content),
-                    ContentDisposition = new ContentDisposition(ContentDisposition.Attachment),
-                    ContentTransferEncoding = ContentEncoding.Base64,
-                    FileName = attachment.FileName
-                };
-                
-                body.Attachments.Add(mimePart);
-            }
-        }
+        AddAttachments(attachments, body);
         
         mail.Body = body.ToMessageBody();
         mail.Subject = letter.Subject;
@@ -132,8 +125,30 @@ public class MailService : IMailService
             return Error.Failure("send.email.error","The email message was not sent");
         }
     }
-    
-    //TODO: Добавить кэширование
+
+    /// <summary>
+    /// Добавления вложений в тело письма
+    /// </summary>
+    /// <param name="attachments">Коллекция вложений</param>
+    /// <param name="body">Тело письма</param>
+    private void AddAttachments(IEnumerable<Attachment>? attachments, BodyBuilder body)
+    {
+        if (attachments is not null)
+        {
+            foreach (var attachment in attachments)
+            {
+                var mimePart = new MimePart("application/octet-stream")
+                {
+                    Content = new MimeContent(attachment.Content),
+                    ContentDisposition = new ContentDisposition(ContentDisposition.Attachment),
+                    ContentTransferEncoding = ContentEncoding.Base64,
+                    FileName = attachment.FileName
+                };
+                
+                body.Attachments.Add(mimePart);
+            }
+        }
+    }
 
     /// <summary>
     /// Получения писем из папки
