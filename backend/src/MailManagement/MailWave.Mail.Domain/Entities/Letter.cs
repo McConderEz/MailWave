@@ -25,7 +25,7 @@ public class Letter
     /// <summary>
     /// Основное содержимое письма
     /// </summary>
-    public string Body { get; set; } = string.Empty;
+    public string? Body { get; set; } = string.Empty;
 
     /// <summary>
     /// Названия, вложенных в письмо, файлов
@@ -35,7 +35,7 @@ public class Letter
     /// <summary>
     /// Тема письма
     /// </summary>
-    public string Subject { get; set; } = string.Empty;
+    public string? Subject { get; set; } = string.Empty;
 
     /// <summary>
     /// Папка

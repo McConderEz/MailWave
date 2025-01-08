@@ -119,6 +119,8 @@ public class MailService : IMailService
             
             await client.SendAsync(mail, cancellationToken);
             
+            _dispatcher.UpdateSmtpSessionActivity(mailCredentialsDto.Email);
+            
             foreach (var address in mail.To)
                 _logger.LogInformation("Email successfully sent to {to}", address);
             
@@ -215,6 +217,8 @@ public class MailService : IMailService
             await _unitOfWork.SaveChangesAsync(cancellationToken);
              
             transaction.Commit();
+            
+            _dispatcher.UpdateImapSessionActivity(mailCredentialsDto.Email);
             
             _logger.LogInformation("Got all letters from folder {folder}", selectedFolder.ToString());
             
@@ -316,6 +320,8 @@ public class MailService : IMailService
 
             transaction.Commit();
             
+            _dispatcher.UpdateImapSessionActivity(mailCredentialsDto.Email);
+            
             _logger.LogInformation("Got letter from folder {folder} with message id {messageId}",
                 selectedFolder.ToString(), messageId);
             
@@ -384,6 +390,8 @@ public class MailService : IMailService
             
             transaction.Commit();
             
+            _dispatcher.UpdateImapSessionActivity(mailCredentialsDto.Email);
+            
             _logger.LogInformation("Marked message was deleted");
 
             return Result.Success();
@@ -438,6 +446,8 @@ public class MailService : IMailService
             await folder.CloseAsync(true, cancellationToken);
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+            
+            _dispatcher.UpdateImapSessionActivity(mailCredentialsDto.Email);
             
             _logger.LogInformation(
                 "Message with id {messageId} was moved from folder {previousFolder} to folder {targetFolder}",

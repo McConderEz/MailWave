@@ -1,4 +1,5 @@
 ﻿using MailWave.Mail.Domain.Shared;
+using MailWave.Mail.Infrastructure.BackgroundServices;
 using MailWave.Mail.Infrastructure.Dispatchers;
 using MailWave.Mail.Infrastructure.Repositories;
 using Microsoft.Extensions.Caching.Hybrid;
@@ -19,8 +20,16 @@ public static class DependencyInjection
          .AddValidators()
          .AddDatabase(configuration)
          .AddRedisCache(configuration)
-         .AddDispatchers();
+         .AddDispatchers()
+         .AddBackgroundServices();
       
+      return services;
+   }
+
+   private static IServiceCollection AddBackgroundServices(this IServiceCollection services)
+   {
+      services.AddHostedService<CleanupInactiveClientsBackgroundService>();
+
       return services;
    }
 
