@@ -61,6 +61,42 @@ public class MailClientDispatcher : IDisposable
         return _smtpClients[email];
     }
 
+    public bool IsClientInactive(string email)
+    {
+        //TODO: Реализовать
+        return true;
+    }
+    
+    public async Task CleanupInactiveClientsAsync(CancellationToken cancellationToken)
+    {
+        foreach (var email in _imapClients.Keys.ToList())
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (IsClientInactive(email))
+            {
+                var client = _imapClients[email];
+                await client.DisconnectAsync(true, cancellationToken);
+                client.Dispose();
+                _imapClients.Remove(email);
+                _logger.LogInformation($"Disconnected inactive IMAP client for {email}");
+            }
+        }
+
+        foreach (var email in _smtpClients.Keys.ToList())
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (IsClientInactive(email))
+            {
+                var client = _smtpClients[email];
+                await client.DisconnectAsync(true, cancellationToken);
+                client.Dispose();
+                _smtpClients.Remove(email);
+                _logger.LogInformation($"Disconnected inactive SMTP client for {email}");
+            }
+        }
+    }
+
+
     /// <summary>
     /// Закрытие соединения и освобождение ресурсов
     /// </summary>

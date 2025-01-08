@@ -32,12 +32,18 @@ public class LetterRepository
     /// </summary>
     /// <param name="folderName">Название папки</param>
     /// <param name="id">Уникальный идентификатор</param>
+    /// <param name="emailPrefix">Домен почты</param>
     /// <param name="cancellationToken">Токен отмены</param>
     /// <returns></returns>
-    public async Task<Result> Delete(string folderName, uint id, CancellationToken cancellationToken = default)
+    public async Task<Result> Delete(
+        string folderName, 
+        uint id,
+        string emailPrefix,
+        CancellationToken cancellationToken = default)
     {
         var item = await _dbContext.Letters
-            .FirstOrDefaultAsync(l => l.Id == id && l.Folder == folderName, cancellationToken);
+            .FirstOrDefaultAsync(l =>
+                l.Id == id && l.Folder == folderName && l.EmailPrefix == emailPrefix, cancellationToken);
         if (item is null)
             return Errors.General.NotFound();
         
@@ -51,12 +57,18 @@ public class LetterRepository
     /// </summary>
     /// <param name="folderName">Название папки</param>
     /// <param name="id">Уникальный идентификатор</param>
+    /// <param name="emailPrefix">Домен почты</param>
     /// <param name="cancellationToken">Токен отмены</param>
     /// <returns></returns>
-    public async Task<Result<Letter>> GetById(string folderName,uint id, CancellationToken cancellationToken = default)
+    public async Task<Result<Letter>> GetById(
+        string folderName,
+        uint id,
+        string emailPrefix,
+        CancellationToken cancellationToken = default)
     {
         var item = await _dbContext.Letters
-            .FirstOrDefaultAsync(l => l.Id == id && l.Folder == folderName, cancellationToken);
+            .FirstOrDefaultAsync(l =>
+                l.Id == id && l.Folder == folderName && l.EmailPrefix == emailPrefix, cancellationToken);
         if (item is null)
             return Errors.General.NotFound();
 
@@ -77,15 +89,27 @@ public class LetterRepository
         return item;
     }
 
+    /// <summary>
+    /// Получение писем из папки с пагинацией
+    /// </summary>
+    /// <param name="folderName">Название папки</param>
+    /// <param name="emailPrefix">Домен почты</param>
+    /// <param name="page">Страница</param>
+    /// <param name="pageSize">Размер страницы</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns></returns>
     public async Task<Result<List<Letter>>> GetByFolder(
         string folderName,
+        string emailPrefix,
         int page, 
         int pageSize,
         CancellationToken cancellationToken = default)
     {
-        var letters = await _dbContext.Letters.Where(l => l.Folder == folderName)
+        var letters = await _dbContext.Letters.Where(
+                l => l.Folder == folderName && l.EmailPrefix == emailPrefix)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
+            .OrderByDescending(l => l.Date)
             .ToListAsync(cancellationToken);
 
         return letters;

@@ -22,27 +22,34 @@ public static class MailKitExtensions
     /// Порт для подключения к IMAP серверу
     /// </summary>
     private static readonly int _imapPort = 993;
-    
+
     /// <summary>
     /// Получение всех сообщений из папки
     /// </summary>
     /// <param name="folder">Тип папки (Sent, Draft, Junk and etc.)</param>
+    /// <param name="userName">Имя пользователя</param>
     /// <param name="page">Страница</param>
     /// <param name="pageSize">Размер страницы</param>
     /// <param name="cancellationToken">Токен отмены</param>
     /// <returns>Список писем из папки</returns>
     public static async Task<List<Letter>> GetMessagesAsync(
         this IMailFolder folder,
+        string userName,
         int page,
         int pageSize,
         CancellationToken cancellationToken = default)
     {
         var uids = await folder.SearchAsync(SearchQuery.All, cancellationToken);
-        var startPosition = (page - 1) * pageSize;
-        var endPosition = Math.Min(uids.Count, startPosition + pageSize);
-
+        
+        var totalMessages = uids.Count;
+        
+        var startPosition = Math.Max(0, totalMessages - (page * pageSize));
+        var endPosition = Math.Min(totalMessages, totalMessages - ((page - 1) * pageSize));
+        
         var messages = new List<Letter>();
 
+        var emailPrefix = GetMailDomain(userName);
+        
         for (int i = startPosition; i < endPosition; i++)
         {
             var message = await folder.GetMessageAsync(uids[i], cancellationToken);
@@ -50,25 +57,29 @@ public static class MailKitExtensions
             {
                 Id = uids[i].Id,
                 From = message.From.ToString(),
-                To = message.To.Select(t => t.Name).ToList(),
+                Body = message.HtmlBody,
+                To = message.To.Select(t => t.ToString()).ToList(),
                 Subject = message.Subject,
                 Date = message.Date.UtcDateTime,
-                Folder = folder.Name
+                Folder = folder.Name,
+                EmailPrefix = emailPrefix
             });
         }
 
-        return messages;
+        return messages.OrderByDescending(m => m.Date).ToList();
     }
 
     /// <summary>
     /// Получение письма со всеми вложениями, если они существуют
     /// </summary>
     /// <param name="folder">Выбранная папка</param>
+    /// <param name="userName">Имя пользователя</param>
     /// <param name="messageId">Уникальный идентификатор сообщения</param>
     /// <param name="cancellationToken">Токен отмены</param>
     /// <returns>Письмо со всеми вложенными файлами</returns>
     public static async Task<Result<Letter>> GetMessageWithAttachmentsAsync(
         this IMailFolder folder,
+        string userName,
         uint messageId,
         CancellationToken cancellationToken = default)
     {
@@ -83,6 +94,8 @@ public static class MailKitExtensions
         if (message is null)
             return Error.Failure("get.message.error",$"Cannot get message");
 
+        var emailPrefix = GetMailDomain(userName);
+        
         var letter = new Letter
         {
             Id = uId.Value.Id,
@@ -91,7 +104,8 @@ public static class MailKitExtensions
             To = message.To.Select(t => t.Name).ToList(),
             Subject = message.Subject,
             Date = message.Date.UtcDateTime,
-            Folder = folder.Name
+            Folder = folder.Name,
+            EmailPrefix = emailPrefix
         };
             
         if (message.Attachments.Count() != 0)
@@ -141,5 +155,16 @@ public static class MailKitExtensions
         var host = "imap" + "." + connectionData[0] + "." + connectionData[1];
 
         await client.ConnectAsync(host, _imapPort, cancellationToken: cancellationToken);
+    }
+
+    /// <summary>
+    /// Получение домена почты из userName
+    /// </summary>
+    /// <param name="userName">Имя пользователя</param>
+    public static string GetMailDomain(string userName)
+    {
+        var connectionData = userName.Split("@")[1].Split(".");
+
+        return connectionData[0];
     }
 }

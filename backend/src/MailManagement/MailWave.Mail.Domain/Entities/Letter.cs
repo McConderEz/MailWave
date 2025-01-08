@@ -7,10 +7,6 @@ namespace MailWave.Mail.Domain.Entities;
 /// </summary>
 public class Letter
 {
-    //Redis caching
-    [JsonConstructor]
-    public Letter(){}
-    
     /// <summary>
     /// Уникальный идентификатор
     /// </summary>
@@ -45,6 +41,11 @@ public class Letter
     /// Папка
     /// </summary>
     public string Folder { get; set; }
+    
+    /// <summary>
+    /// Префикс почты для составного ключа
+    /// </summary>
+    public string EmailPrefix { get; set; }
     
     /// <summary>
     /// Дата отправки письма

@@ -22,7 +22,7 @@ public class LetterConfiguration: IEntityTypeConfiguration<Letter>
     {
         builder.ToTable("letters");
 
-        builder.HasKey(l => new { l.Id, l.Folder });
+        builder.HasKey(l => new { l.Id, l.Folder, l.EmailPrefix });
         
         builder.Property(l => l.From)
             .HasMaxLength(Constraints.MAX_VALUE_LENGTH)
@@ -44,6 +44,9 @@ public class LetterConfiguration: IEntityTypeConfiguration<Letter>
 
         builder.Property(l => l.Folder)
             .HasColumnName("folder");
+
+        builder.Property(l => l.EmailPrefix)
+            .HasColumnName("email_prefix");
         
         builder.Property(l => l.IsCrypted)
             .HasColumnName("is_crypted");

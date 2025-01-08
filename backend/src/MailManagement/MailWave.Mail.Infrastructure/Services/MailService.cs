@@ -178,17 +178,19 @@ public class MailService : IMailService
             
             var client = await _dispatcher.GetImapClientAsync(
                 mailCredentialsDto.Email, mailCredentialsDto.Password, cancellationToken);
-
+            
             var folder = await SelectFolder(selectedFolder, mailCredentialsDto.Email ,client, cancellationToken);
 
             await folder.OpenAsync(FolderAccess.ReadWrite, cancellationToken);
             
+            var emailPrefix = MailKitExtensions.GetMailDomain(mailCredentialsDto.Email);
+            
             var lettersCache = await _hybridCache.GetOrCreateAsync(
-                $"letters_{selectedFolder.ToString()}_{page}",
-                async cancel =>
+                $"letters_{selectedFolder.ToString()}_{page}_{emailPrefix}",
+                async _ =>
                 {
                     var letters = await _repository.GetByFolder(
-                        folder.Name, page, pageSize, cancellationToken);
+                        folder.Name, emailPrefix, page, pageSize, cancellationToken);
 
                     if (letters.IsFailure)
                         return new List<Letter>();
@@ -196,16 +198,17 @@ public class MailService : IMailService
                     if (letters.Value.Count != 0)
                         return letters.Value;
                     
-                    var lettersFromFolder = await folder.GetMessagesAsync(page, pageSize, cancellationToken);
+                    var lettersFromFolder = await folder.GetMessagesAsync(
+                        mailCredentialsDto.Email, page, pageSize, cancellationToken);
+
+                    if (lettersFromFolder.Count == 0)
+                        return [];
                     
                     await _repository.Add(lettersFromFolder, cancellationToken);
                     
                     return lettersFromFolder;
                 },
                 cancellationToken: cancellationToken);
-            
-            if (lettersCache.Count == 0)
-                return Errors.General.Null();
 
             await folder.CloseAsync(true, cancellationToken);
 
@@ -279,39 +282,35 @@ public class MailService : IMailService
             var folder = await SelectFolder(selectedFolder, mailCredentialsDto.Email, client, cancellationToken);
 
             await folder.OpenAsync(FolderAccess.ReadWrite, cancellationToken);
-            
-            var letter = await folder.GetMessageWithAttachmentsAsync(messageId, cancellationToken);
 
+            var emailPrefix = MailKitExtensions.GetMailDomain(mailCredentialsDto.Email);
+            
             var letterCache = await _hybridCache.GetOrCreateAsync(
-                $"letters_{messageId}_{selectedFolder.ToString()}",
-                async cancel =>
+                $"letters_{messageId}_{selectedFolder.ToString()}_{emailPrefix}",
+                async _ =>
                 {
                     var letterFromRepository = await _repository.GetById(
-                        folder.Name, messageId, cancellationToken);
-    
+                        folder.Name, messageId,emailPrefix, cancellationToken);
                     
                     if (letterFromRepository.IsSuccess)
-                        return letterFromRepository;
+                        return letterFromRepository.Value;
                     
                     var letterFromFolder = await folder
-                        .GetMessageWithAttachmentsAsync(messageId, cancellationToken);
+                        .GetMessageWithAttachmentsAsync(emailPrefix, messageId, cancellationToken);
 
                     if (letterFromFolder.IsFailure)
-                        return letterFromFolder.Errors;
+                        return null;
                     
                     await _repository.Add([letterFromFolder.Value], cancellationToken);
                     
-                    return letterFromFolder;
+                    return letterFromFolder.Value;
                 },
                 cancellationToken: cancellationToken);
 
-            if (letterCache.IsFailure)
-                return letter.Errors;
+            if (letterCache is null)
+                return Errors.General.NotFound();
             
             await folder.CloseAsync(true, cancellationToken);
-            
-            if (letter.IsFailure)
-                return letter.Errors;
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -320,7 +319,7 @@ public class MailService : IMailService
             _logger.LogInformation("Got letter from folder {folder} with message id {messageId}",
                 selectedFolder.ToString(), messageId);
             
-            return letter;
+            return letterCache;
         }
         catch (Exception ex)
         {
@@ -363,9 +362,12 @@ public class MailService : IMailService
             if (uId is null)
                 return Errors.General.NotFound();
 
-            await _repository.Delete(folder.Name, messageId, cancellationToken);
+            var emailPrefix = MailKitExtensions.GetMailDomain(mailCredentialsDto.Email);
+            
+            await _repository.Delete(folder.Name, messageId, emailPrefix, cancellationToken);
 
-            await _hybridCache.RemoveAsync($"letters_{messageId}_{selectedFolder.ToString()}", cancellationToken);
+            await _hybridCache.RemoveAsync($"letters_{messageId}_{selectedFolder.ToString()}_{emailPrefix}",
+                cancellationToken);
 
             var result = await folder.StoreAsync(
                 uId.Value,
@@ -427,7 +429,9 @@ public class MailService : IMailService
             if (uId is null)
                 return Errors.General.NotFound();
 
-            await _repository.Delete(folder.Name, messageId, cancellationToken);
+            var emailPrefix = MailKitExtensions.GetMailDomain(mailCredentialsDto.Email);
+            
+            await _repository.Delete(folder.Name, messageId, emailPrefix, cancellationToken);
             
             await folder.MoveToAsync(uId.Value, folderForMove, cancellationToken);
 
