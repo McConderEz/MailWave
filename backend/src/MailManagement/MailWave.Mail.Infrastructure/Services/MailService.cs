@@ -173,8 +173,6 @@ public class MailService : IMailService
         int pageSize,
         CancellationToken cancellationToken = default)
     {
-        var transaction = await _unitOfWork.BeginTransaction(cancellationToken);
-        
         try
         {
             
@@ -191,32 +189,17 @@ public class MailService : IMailService
                 $"letters_{selectedFolder.ToString()}_{page}_{emailPrefix}",
                 async _ =>
                 {
-                    var letters = await _repository.GetByFolder(
-                        folder.Name, emailPrefix, page, pageSize, cancellationToken);
-
-                    if (letters.IsFailure)
-                        return new List<Letter>();
-
-                    if (letters.Value.Count != 0)
-                        return letters.Value;
-                    
                     var lettersFromFolder = await folder.GetMessagesAsync(
                         mailCredentialsDto.Email, page, pageSize, cancellationToken);
 
                     if (lettersFromFolder.Count == 0)
                         return [];
                     
-                    await _repository.Add(lettersFromFolder, cancellationToken);
-                    
                     return lettersFromFolder;
                 },
                 cancellationToken: cancellationToken);
 
             await folder.CloseAsync(true, cancellationToken);
-
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-             
-            transaction.Commit();
             
             _dispatcher.UpdateImapSessionActivity(mailCredentialsDto.Email);
             
@@ -226,8 +209,6 @@ public class MailService : IMailService
         }
         catch
         {
-            transaction.Rollback();
-            
             _logger.LogError("Cannot receive email message");
 
             return Error.Failure("email.receive.error","Cannot receive email message");
@@ -276,8 +257,6 @@ public class MailService : IMailService
         uint messageId,
         CancellationToken cancellationToken = default)
     {
-        var transaction = await _unitOfWork.BeginTransaction(cancellationToken);
-        
         try
         {
             var client = await _dispatcher.GetImapClientAsync(
@@ -293,19 +272,11 @@ public class MailService : IMailService
                 $"letters_{messageId}_{selectedFolder.ToString()}_{emailPrefix}",
                 async _ =>
                 {
-                    var letterFromRepository = await _repository.GetById(
-                        folder.Name, messageId,emailPrefix, cancellationToken);
-                    
-                    if (letterFromRepository.IsSuccess)
-                        return letterFromRepository.Value;
-                    
                     var letterFromFolder = await folder
                         .GetMessageWithAttachmentsAsync(emailPrefix, messageId, cancellationToken);
 
                     if (letterFromFolder.IsFailure)
                         return null;
-                    
-                    await _repository.Add([letterFromFolder.Value], cancellationToken);
                     
                     return letterFromFolder.Value;
                 },
@@ -315,10 +286,6 @@ public class MailService : IMailService
                 return Errors.General.NotFound();
             
             await folder.CloseAsync(true, cancellationToken);
-
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-            transaction.Commit();
             
             _dispatcher.UpdateImapSessionActivity(mailCredentialsDto.Email);
             
@@ -329,11 +296,68 @@ public class MailService : IMailService
         }
         catch (Exception ex)
         {
-            transaction.Rollback();
-            
             _logger.LogError("Cannot get message with id {messageId}. Ex. message: {ex}", messageId, ex.Message);
             
             return Error.Failure("message.receive.error","Cannot get message");
+        }
+    }
+
+    /// <summary>
+    /// Сохранение писем в базу данных
+    /// </summary>
+    /// <param name="mailCredentialsDto">Данные учётной записи</param>
+    /// <param name="messageIds">Коллекция уникальных идентификаторов</param>
+    /// <param name="selectedFolder">Выбранная папка</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns></returns>
+    public async Task<Result> SaveMessagesInDataBase(
+        MailCredentialsDto mailCredentialsDto,
+        IEnumerable<uint> messageIds,
+        EmailFolder selectedFolder,
+        CancellationToken cancellationToken = default)
+    {
+        var transaction = await _unitOfWork.BeginTransaction(cancellationToken);
+        try
+        {
+            var client = await _dispatcher.GetImapClientAsync(
+                mailCredentialsDto.Email, mailCredentialsDto.Password, cancellationToken);
+
+            var folder = await SelectFolder(selectedFolder, mailCredentialsDto.Email, client, cancellationToken);
+
+            await folder.OpenAsync(FolderAccess.ReadWrite, cancellationToken);
+
+            var emailPrefix = MailKitExtensions.GetMailDomain(mailCredentialsDto.Email);
+            
+            foreach (var messageId in messageIds)
+            {
+                var letter =
+                    await folder.GetMessageWithAttachmentsAsync(mailCredentialsDto.Email, messageId, cancellationToken);
+
+                if (letter.IsFailure)
+                    return letter.Errors;
+
+                var isExist = await _repository
+                    .GetById(folder.Name, messageId, emailPrefix, cancellationToken);
+                
+                if (isExist.IsFailure)
+                    await _repository.Add([letter.Value], cancellationToken);
+            }
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            
+            transaction.Commit();
+            
+            _logger.LogInformation("batch of letters was saved in database");
+
+            return Result.Success();
+        }
+        catch(Exception ex)
+        {
+            transaction.Rollback();   
+            
+            _logger.LogError("Fail to save letters to database.Ex. message: {ex} ", ex.Message);
+
+            return Error.Failure("save.db.fail", "Cannot save letters in db");
         }
     }
 

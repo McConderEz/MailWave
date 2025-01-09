@@ -5,6 +5,9 @@ using Microsoft.Extensions.Logging;
 
 namespace MailWave.Mail.Infrastructure.BackgroundServices;
 
+/// <summary>
+/// Фоновый процесс для очистки неактивных клиентов(неактивными считаются те, что не совершали операции более 15 минут)
+/// </summary>
 public class CleanupInactiveClientsBackgroundService: BackgroundService
 {
     private const int FREQUENCY_OF_REVISION = 15;

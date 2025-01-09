@@ -101,7 +101,7 @@ public static class MailKitExtensions
             Id = uId.Value.Id,
             Body = message.HtmlBody,
             From = message.From.ToString(),
-            To = message.To.Select(t => t.Name).ToList(),
+            To = message.To.Select(t => t.ToString()).ToList(),
             Subject = message.Subject,
             Date = message.Date.UtcDateTime,
             Folder = folder.Name,

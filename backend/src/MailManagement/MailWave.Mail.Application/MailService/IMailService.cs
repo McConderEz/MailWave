@@ -80,4 +80,18 @@ public interface IMailService
         EmailFolder targetFolder,
         uint messageId,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Сохранение писем в базу данных
+    /// </summary>
+    /// <param name="mailCredentialsDto">Данные учётной записи</param>
+    /// <param name="messageIds">Коллекция уникальных идентификаторов</param>
+    /// <param name="selectedFolder">Выбранная папка</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns></returns>
+    Task<Result> SaveMessagesInDataBase(
+        MailCredentialsDto mailCredentialsDto,
+        IEnumerable<uint> messageIds,
+        EmailFolder selectedFolder,
+        CancellationToken cancellationToken = default);
 }

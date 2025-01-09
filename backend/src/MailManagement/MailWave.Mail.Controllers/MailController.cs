@@ -4,6 +4,7 @@ using MailWave.Framework;
 using MailWave.Mail.Application.DTOs;
 using MailWave.Mail.Application.Features.Commands.DeleteMessage;
 using MailWave.Mail.Application.Features.Commands.MoveMessage;
+using MailWave.Mail.Application.Features.Commands.SaveMessagesInDatabase;
 using MailWave.Mail.Application.Features.Commands.SendMessage;
 using MailWave.Mail.Application.Features.Queries.GetMessageFromFolderById;
 using MailWave.Mail.Application.Features.Queries.GetMessagesFromFolderWithPagination;
@@ -18,7 +19,7 @@ namespace MailWave.Mail.Controllers;
 [Authorize]
 public class MailController: ApplicationController
 {
-    [HttpGet(Name = "GetMessagesFromFolderWithPagination")]
+    [HttpGet]
     public async Task<IActionResult> GetMessagesFromFolder(
         [FromQuery] GetMessagesFromFolderWithPaginationRequest request,
         [FromServices] MailCredentialsScopedData mailCredentials,
@@ -128,6 +129,26 @@ public class MailController: ApplicationController
             new MailCredentialsDto(mailCredentials.Email, mailCredentials.Password),
             request.SelectedFolder,
             (uint)messageId);
+
+        var result = await handler.Handle(command, cancellationToken);
+
+        if (result.IsFailure)
+            result.Errors.ToResponse();
+
+        return Ok(result);
+    }
+    
+    [HttpPost("/saving-message")]
+    public async Task<IActionResult> SaveMessagesInDatabase(
+        [FromForm] SaveMessagesToDatabaseRequest request,
+        [FromServices] MailCredentialsScopedData mailCredentials,
+        [FromServices] SaveMessagesInDatabaseHandler handler,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new SaveMessagesInDatabaseCommand(
+            new MailCredentialsDto(mailCredentials.Email, mailCredentials.Password),
+            request.SelectedFolder,
+            request.MessageIds);
 
         var result = await handler.Handle(command, cancellationToken);
 
