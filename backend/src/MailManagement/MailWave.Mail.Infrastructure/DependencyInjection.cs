@@ -1,4 +1,6 @@
-﻿using MailWave.Mail.Domain.Shared;
+﻿using Hangfire;
+using Hangfire.PostgreSql;
+using MailWave.Mail.Domain.Shared;
 using MailWave.Mail.Infrastructure.BackgroundServices;
 using MailWave.Mail.Infrastructure.Dispatchers;
 using MailWave.Mail.Infrastructure.Repositories;
@@ -21,11 +23,24 @@ public static class DependencyInjection
          .AddDatabase(configuration)
          .AddRedisCache(configuration)
          .AddDispatchers()
-         .AddBackgroundServices();
+         .AddBackgroundServices()
+         .AddHangfireServices(configuration);
       
       return services;
    }
 
+   private static IServiceCollection AddHangfireServices(this IServiceCollection services, IConfiguration configuration)
+   {
+      services.AddHangfire(hangfireConfig => hangfireConfig
+         .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+         .UseSimpleAssemblyNameTypeSerializer()
+         .UseRecommendedSerializerSettings()
+         .UsePostgreSqlStorage(c =>
+            c.UseNpgsqlConnection(configuration.GetConnectionString("DefaultConnection"))));
+      
+      return services;
+   }
+   
    private static IServiceCollection AddBackgroundServices(this IServiceCollection services)
    {
       services.AddHostedService<CleanupInactiveClientsBackgroundService>();

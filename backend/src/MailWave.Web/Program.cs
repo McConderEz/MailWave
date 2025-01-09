@@ -1,3 +1,4 @@
+using Hangfire;
 using MailWave.Web;
 using MailWave.Web.Extensions;
 using MailWave.Web.Middlewares;
@@ -17,6 +18,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseHangfireServer();
+app.UseHangfireDashboard();
 
 app.MapControllers();
 
