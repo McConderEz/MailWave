@@ -6,6 +6,7 @@ using MailWave.Mail.Application.Features.Commands.DeleteMessage;
 using MailWave.Mail.Application.Features.Commands.MoveMessage;
 using MailWave.Mail.Application.Features.Commands.SaveMessagesInDatabase;
 using MailWave.Mail.Application.Features.Commands.SendMessage;
+using MailWave.Mail.Application.Features.Commands.SendScheduledMessage;
 using MailWave.Mail.Application.Features.Queries.GetMessageFromFolderById;
 using MailWave.Mail.Application.Features.Queries.GetMessagesFromFolderWithPagination;
 using MailWave.Mail.Contracts.Requests;
@@ -69,16 +70,7 @@ public class MailController: ApplicationController
         [FromServices] SendMessageHandler handler,
         CancellationToken cancellationToken = default)
     {
-        List<AttachmentDto> attachmentDtos = [];
-        
-        if (attachments is not null)
-        {
-            foreach (var attachment in attachments)
-            {
-                attachmentDtos.Add(
-                    new AttachmentDto(attachment.OpenReadStream(), attachment.FileName));
-            }
-        }
+        var attachmentDtos = LoadAttachments(attachments);
 
         var command = new SendMessageCommand(
             new MailCredentialsDto(mailCredentials.Email, mailCredentials.Password),
@@ -138,7 +130,7 @@ public class MailController: ApplicationController
         return Ok(result);
     }
     
-    [HttpPost("/saving-message")]
+    [HttpPost("saving-message")]
     public async Task<IActionResult> SaveMessagesInDatabase(
         [FromForm] SaveMessagesToDatabaseRequest request,
         [FromServices] MailCredentialsScopedData mailCredentials,
@@ -156,5 +148,47 @@ public class MailController: ApplicationController
             result.Errors.ToResponse();
 
         return Ok(result);
+    }
+    
+    [HttpPost("scheduled-message")]
+    public async Task<IActionResult> SendScheduledMessage(
+        [FromForm] SendScheduledMessageRequest request,
+        [FromForm] IFormFileCollection? attachments,
+        [FromServices] MailCredentialsScopedData mailCredentials,
+        [FromServices] SendScheduledMessageHandler handler,
+        CancellationToken cancellationToken = default)
+    {
+        var attachmentDtos = LoadAttachments(attachments);
+
+        var command = new SendScheduledMessageCommand(
+            new MailCredentialsDto(mailCredentials.Email, mailCredentials.Password),
+            request.Subject,
+            request.Body,
+            request.EnqueueAt,
+            request.Receivers,
+            attachmentDtos);
+
+        var result = await handler.Handle(command, cancellationToken);
+
+        if (result.IsFailure)
+            result.Errors.ToResponse();
+
+        return Ok(result);
+    }
+
+    private List<AttachmentDto> LoadAttachments(IFormFileCollection? attachments)
+    {
+        List<AttachmentDto> attachmentDtos = [];
+
+        if (attachments is not null)
+        {
+            foreach (var attachment in attachments)
+            {
+                attachmentDtos.Add(
+                    new AttachmentDto(attachment.OpenReadStream(), attachment.FileName));
+            }
+        }
+
+        return attachmentDtos;
     }
 }

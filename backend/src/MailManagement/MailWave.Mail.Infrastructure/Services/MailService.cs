@@ -1,4 +1,5 @@
-﻿using MailKit;
+﻿using Hangfire;
+using MailKit;
 using MailKit.Net.Imap;
 using MailKit.Net.Smtp;
 using MailKit.Search;
@@ -14,6 +15,7 @@ using MailWave.SharedKernel.Shared.Errors;
 using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Logging;
 using MimeKit;
+using Newtonsoft.Json;
 using IMailService = MailWave.Mail.Application.MailService.IMailService;
 using EmailFolder = MailWave.SharedKernel.Shared.Constraints.EmailFolder;
 
@@ -302,6 +304,59 @@ public class MailService : IMailService
         }
     }
 
+    /// <summary>
+    /// Отправка запланированного сообщения
+    /// </summary>
+    /// <param name="mailCredentialsDto">Данные учётной записи</param>
+    /// <param name="attachments">Вложения</param>
+    /// <param name="letter">Письмо для отправки(адреса получателей, отправитель, основная информация)</param>
+    /// <param name="enqueueAt">Дата и время отправки</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns></returns>
+    public Task<Result> SendScheduledMessage(
+        MailCredentialsDto mailCredentialsDto,
+        IEnumerable<Attachment>? attachments,
+        Letter letter,
+        DateTime enqueueAt,
+        CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Scheduling message to be sent at: {enqueueAt}", enqueueAt);
+        
+        var attachmentsJson = attachments is not null ? JsonConvert.SerializeObject(attachments) : null;
+        
+        string jobId = BackgroundJob.Schedule(
+            () => DecoratorSendScheduledMessage(mailCredentialsDto, attachmentsJson, letter, cancellationToken),
+            enqueueAt.AddHours(-3));
+
+        _logger.LogInformation("Scheduled message with job ID: {jobId}", jobId);
+
+        return Task.FromResult(Result.Success());
+    }
+
+    /// <summary>
+    /// Метод-обёртка для отправки запланированного сообщения с вложениями через hangfire
+    /// </summary>
+    /// <param name="mailCredentialsDto">Данные учётной записи</param>
+    /// <param name="attachmentsJson">Вложения в формате json</param>
+    /// <param name="letter">Письмо для отправки(адреса получателей, отправитель, основная информация)</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns></returns>
+    public async Task<Result> DecoratorSendScheduledMessage(
+        MailCredentialsDto mailCredentialsDto,
+        string? attachmentsJson,
+        Letter letter,
+        CancellationToken cancellationToken = default)
+    {
+        IEnumerable<Attachment>? attachments = 
+            attachmentsJson is not null ? JsonConvert.DeserializeObject<IEnumerable<Attachment>>(attachmentsJson) : null;
+
+        var result = await SendMessage(mailCredentialsDto, attachments, letter, cancellationToken);
+        if (result.IsFailure)
+            return result.Errors;
+        
+        return Result.Success();
+    }
+    
     /// <summary>
     /// Сохранение писем в базу данных
     /// </summary>

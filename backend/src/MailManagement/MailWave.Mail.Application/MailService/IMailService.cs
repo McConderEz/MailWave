@@ -94,4 +94,20 @@ public interface IMailService
         IEnumerable<uint> messageIds,
         EmailFolder selectedFolder,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Отправка запланированного сообщения
+    /// </summary>
+    /// <param name="mailCredentialsDto">Данные учётной записи</param>
+    /// <param name="attachments">Вложения</param>
+    /// <param name="letter">Письмо для отправки(адреса получателей, отправитель, основная информация)</param>
+    /// /// <param name="enqueueAt">Дата и время отправки</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns></returns>
+    Task<Result> SendScheduledMessage(
+        MailCredentialsDto mailCredentialsDto,
+        IEnumerable<Attachment>? attachments,
+        Letter letter,
+        DateTime enqueueAt,
+        CancellationToken cancellationToken = default);
 }

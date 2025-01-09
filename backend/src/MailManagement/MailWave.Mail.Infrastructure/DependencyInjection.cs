@@ -2,11 +2,13 @@
 using Hangfire.PostgreSql;
 using MailWave.Mail.Domain.Shared;
 using MailWave.Mail.Infrastructure.BackgroundServices;
+using MailWave.Mail.Infrastructure.Converters;
 using MailWave.Mail.Infrastructure.Dispatchers;
 using MailWave.Mail.Infrastructure.Repositories;
 using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 using IMailService = MailWave.Mail.Application.MailService.IMailService;
 using MailService = MailWave.Mail.Infrastructure.Services.MailService;
 
@@ -31,6 +33,11 @@ public static class DependencyInjection
 
    private static IServiceCollection AddHangfireServices(this IServiceCollection services, IConfiguration configuration)
    {
+      GlobalConfiguration.Configuration.UseSerializerSettings(new JsonSerializerSettings
+      {
+         Converters = { new AttachmentJsonConverter() }
+      });
+      
       services.AddHangfire(hangfireConfig => hangfireConfig
          .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
          .UseSimpleAssemblyNameTypeSerializer()
