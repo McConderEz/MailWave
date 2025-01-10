@@ -36,6 +36,7 @@ public static class DependencyInjection
    private static IServiceCollection AddCryptProviders(this IServiceCollection services)
    {
       services.AddTransient<DesCryptProvider>();
+      services.AddTransient<RsaCryptProvider>();
 
       return services;
    }
