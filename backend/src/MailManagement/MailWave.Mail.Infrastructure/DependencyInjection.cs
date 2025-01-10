@@ -3,6 +3,7 @@ using Hangfire.PostgreSql;
 using MailWave.Mail.Domain.Shared;
 using MailWave.Mail.Infrastructure.BackgroundServices;
 using MailWave.Mail.Infrastructure.Converters;
+using MailWave.Mail.Infrastructure.CryptProviders;
 using MailWave.Mail.Infrastructure.Dispatchers;
 using MailWave.Mail.Infrastructure.Repositories;
 using Microsoft.Extensions.Caching.Hybrid;
@@ -26,8 +27,16 @@ public static class DependencyInjection
          .AddRedisCache(configuration)
          .AddDispatchers()
          .AddBackgroundServices()
-         .AddHangfireServices(configuration);
+         .AddHangfireServices(configuration)
+         .AddCryptProviders();
       
+      return services;
+   }
+
+   private static IServiceCollection AddCryptProviders(this IServiceCollection services)
+   {
+      services.AddTransient<DesCryptProvider>();
+
       return services;
    }
 
