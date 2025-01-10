@@ -1,8 +1,12 @@
 # MailWave
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![.NET](https://img.shields.io/badge/.NET-8.0-blue.svg)](https://dotnet.microsoft.com/)
+[![.NET](https://img.shields.io/badge/.NET-9.0-blue.svg)](https://dotnet.microsoft.com/)
 
 MailWave - почтовый клиент, который способен работать с 3 почтовыми сервисами, такими как: Gmail, Yandex, Mail.ru. Предоставляет удобную функциональность и централизованный доступ.
+
+<details><summary><h2>Скриншоты</h2></summary>
+Будут добавлены, когда будет готова фронтенд часть платформы
+</details>
 
 ## Возможности backend`а:
 - [x] Аутентификация в почтовый клиент по JWT с проверкой соединения по протоколу SMTP/IMAP
