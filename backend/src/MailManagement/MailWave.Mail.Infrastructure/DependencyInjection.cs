@@ -37,7 +37,8 @@ public static class DependencyInjection
    {
       services.AddTransient<DesCryptProvider>();
       services.AddTransient<RsaCryptProvider>();
-
+      services.AddTransient<Md5CryptProvider>();
+      
       return services;
    }
 

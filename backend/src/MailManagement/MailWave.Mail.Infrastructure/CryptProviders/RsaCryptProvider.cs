@@ -6,6 +6,9 @@ using Microsoft.Extensions.Logging;
 
 namespace MailWave.Mail.Infrastructure.CryptProviders;
 
+/// <summary>
+/// Провайдер для шифрования и подписи алгоритмом RSA
+/// </summary>
 public class RsaCryptProvider
 {
     private readonly ILogger<RsaCryptProvider> _logger;
