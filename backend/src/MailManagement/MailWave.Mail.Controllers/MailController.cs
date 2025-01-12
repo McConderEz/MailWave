@@ -2,6 +2,7 @@
 using MailWave.Core.Models;
 using MailWave.Framework;
 using MailWave.Mail.Application.DTOs;
+using MailWave.Mail.Application.Features.Commands.AddFriend;
 using MailWave.Mail.Application.Features.Commands.DeleteMessage;
 using MailWave.Mail.Application.Features.Commands.MoveMessage;
 using MailWave.Mail.Application.Features.Commands.SaveMessagesInDatabase;
@@ -167,6 +168,24 @@ public class MailController: ApplicationController
             request.EnqueueAt,
             request.Receivers,
             attachmentDtos);
+
+        var result = await handler.Handle(command, cancellationToken);
+
+        if (result.IsFailure)
+            result.Errors.ToResponse();
+
+        return Ok(result);
+    }
+    
+    [HttpPost("sending-friend-request")]
+    public async Task<IActionResult> SendFriendRequest(
+        [FromBody] AddFriendRequest request,
+        [FromServices] MailCredentialsScopedData mailCredentials,
+        [FromServices] AddFriendHandler handler,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new AddFriendCommand(
+            new MailCredentialsDto(mailCredentials.Email, mailCredentials.Password), request.Receiver);
 
         var result = await handler.Handle(command, cancellationToken);
 

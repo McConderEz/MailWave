@@ -22,6 +22,16 @@ public class FriendshipRepository: IFriendshipRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<Friendship> GetByEmails(
+        string firstUserEmail, string secondUserEmail, CancellationToken cancellationToken = default)
+    {
+        return await _friendshipCollection
+            .Find(friendship => 
+                (friendship.FirstUserEmail == firstUserEmail || friendship.SecondUserEmail == firstUserEmail) && 
+                (friendship.SecondUserEmail == secondUserEmail || friendship.SecondUserEmail == secondUserEmail))
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
     public async Task Delete(string friendshipId, CancellationToken cancellationToken = default)
     {
         await _friendshipCollection.DeleteOneAsync(friendship => friendship.Id == friendshipId, cancellationToken);

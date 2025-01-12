@@ -18,4 +18,6 @@ public class Friendship
     public string SecondUserId { get; set; } = String.Empty;
     [BsonRequired]
     public string SecondUserEmail { get; set; } = string.Empty;
+    [BsonRequired]
+    public bool IsAccepted { get; set; } = false;
 }

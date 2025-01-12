@@ -40,7 +40,7 @@ public class DesCryptProvider : IDesCryptProvider
             
             var bytesData = Encoding.UTF8.GetBytes(inputData);
             
-            return Encoding.UTF8.GetString(des.EncryptCfb(bytesData, bytesIv));
+            return Convert.ToBase64String(des.EncryptCfb(bytesData, bytesIv));
         }
         catch (Exception ex)
         {
@@ -70,7 +70,7 @@ public class DesCryptProvider : IDesCryptProvider
 
             var bytesData = Encoding.UTF8.GetBytes(inputData);
             
-            return Encoding.UTF8.GetString(des.DecryptCfb(bytesData, bytesIv));
+            return Convert.ToBase64String(des.DecryptCfb(bytesData, bytesIv));
         }
         catch (Exception ex)
         {
@@ -87,8 +87,8 @@ public class DesCryptProvider : IDesCryptProvider
     {
         using var desKey = DES.Create();
 
-        var key = Encoding.UTF8.GetString(desKey.Key);
-        var iv = Encoding.UTF8.GetString(desKey.IV);
+        var key = Convert.ToBase64String(desKey.Key);
+        var iv = Convert.ToBase64String(desKey.IV);
         
         return (key, iv);
     }

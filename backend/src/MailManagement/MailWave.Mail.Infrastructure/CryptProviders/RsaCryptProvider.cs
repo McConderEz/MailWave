@@ -35,7 +35,7 @@ public class RsaCryptProvider : IRsaCryptProvider
             
             var bytesData = Encoding.UTF8.GetBytes(inputData);
             
-            return Encoding.UTF8.GetString(rsa.Encrypt(bytesData, false));
+            return Convert.ToBase64String(rsa.Encrypt(bytesData, false));
         }
         catch (Exception ex)
         {
@@ -60,7 +60,7 @@ public class RsaCryptProvider : IRsaCryptProvider
             
             var bytesData = Encoding.UTF8.GetBytes(inputData);
             
-            return Encoding.UTF8.GetString(rsa.Decrypt(bytesData, false));
+            return Convert.ToBase64String(rsa.Decrypt(bytesData, false));
         }
         catch (Exception ex)
         {
@@ -73,12 +73,12 @@ public class RsaCryptProvider : IRsaCryptProvider
     /// Генерация ключей RSA
     /// </summary>
     /// <returns>Публичный и приватный ключ</returns>
-    public Result<(string publicKey, string privateKey)> GenerateKey()
+    public (string publicKey, string privateKey) GenerateKey()
     {
         using var rsa = new RSACryptoServiceProvider(2048);
 
-        var publicKey = Encoding.UTF8.GetString(rsa.ExportRSAPublicKey());
-        var privateKey = Encoding.UTF8.GetString(rsa.ExportRSAPrivateKey());
+        var publicKey = Convert.ToBase64String(rsa.ExportRSAPublicKey());
+        var privateKey = Convert.ToBase64String(rsa.ExportRSAPrivateKey());
         
         return (publicKey, privateKey);
     }
@@ -99,7 +99,7 @@ public class RsaCryptProvider : IRsaCryptProvider
 
             var bytesData = Encoding.UTF8.GetBytes(hashData);
 
-            return Encoding.UTF8.GetString(
+            return Convert.ToBase64String(
                 rsa.SignData(bytesData, HashAlgorithmName.MD5, RSASignaturePadding.Pkcs1));
         }
         catch (Exception ex)

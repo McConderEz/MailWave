@@ -1,4 +1,5 @@
 ﻿using MailWave.Accounts.Application;
+using MailWave.Accounts.Application.Features.Consumers.GotFriendshipDataEvent;
 using MailWave.Accounts.Infrastructure;
 using MailWave.Core.Models;
 using MailWave.Mail.Application;
@@ -39,6 +40,7 @@ public static class DependencyInjection
             configure.SetKebabCaseEndpointNameFormatter();
 
             configure.AddConsumer<GotUserCredentialsForMailEventConsumer>();
+            configure.AddConsumer<GotFriendshipDataEventConsumer>();
             
             configure.UsingRabbitMq((context, cfg) =>
             {

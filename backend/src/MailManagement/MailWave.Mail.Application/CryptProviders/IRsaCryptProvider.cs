@@ -24,7 +24,7 @@ public interface IRsaCryptProvider
     /// Генерация ключей RSA
     /// </summary>
     /// <returns>Публичный и приватный ключ</returns>
-    Result<(string publicKey, string privateKey)> GenerateKey();
+    (string publicKey, string privateKey) GenerateKey();
 
     /// <summary>
     /// Подпись данных RSA с помощью MD5

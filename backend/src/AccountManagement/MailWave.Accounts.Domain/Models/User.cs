@@ -11,6 +11,6 @@ public class User
     public string Email { get; set; } = string.Empty;
     [BsonRequired]
     public string Password { get; set; } = string.Empty;
-    [BsonRequired]
+    [BsonElement]
     public List<Friendship> Friendships { get; set; } = [];
 }
