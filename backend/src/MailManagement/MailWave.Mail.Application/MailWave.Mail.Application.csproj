@@ -17,7 +17,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Features\Commands\AddFriend\" />
       <Folder Include="Features\Commands\DeleteFriend\" />
     </ItemGroup>
 
