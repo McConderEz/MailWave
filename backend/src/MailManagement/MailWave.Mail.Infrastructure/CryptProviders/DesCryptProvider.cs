@@ -1,5 +1,6 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
+using MailWave.Mail.Application.CryptProviders;
 using MailWave.SharedKernel.Shared;
 using MailWave.SharedKernel.Shared.Errors;
 using Microsoft.Extensions.Logging;
@@ -9,7 +10,7 @@ namespace MailWave.Mail.Infrastructure.CryptProviders;
 /// <summary>
 /// Провайдер для шифрования данных DES алгоритмом
 /// </summary>
-public class DesCryptProvider
+public class DesCryptProvider : IDesCryptProvider
 {
     private readonly ILogger<DesCryptProvider> _logger;
 

@@ -1,5 +1,6 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
+using MailWave.Mail.Application.CryptProviders;
 using MailWave.SharedKernel.Shared;
 using MailWave.SharedKernel.Shared.Errors;
 using Microsoft.Extensions.Logging;
@@ -9,7 +10,7 @@ namespace MailWave.Mail.Infrastructure.CryptProviders;
 /// <summary>
 /// Провайдер для шифрования и подписи алгоритмом RSA
 /// </summary>
-public class RsaCryptProvider
+public class RsaCryptProvider : IRsaCryptProvider
 {
     private readonly ILogger<RsaCryptProvider> _logger;
 
