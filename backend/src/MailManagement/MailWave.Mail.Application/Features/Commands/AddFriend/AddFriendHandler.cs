@@ -57,19 +57,19 @@ public class AddFriendHandler: ICommandHandler<AddFriendCommand>
             Subject = Domain.Constraints.Constraints.FRIENDS_REQUEST_SUBJECT,
             Body = keys.publicKey + "#" + keys.privateKey
         };
-
-        await _publishEndpoint.Publish(new GotFriendshipDataEvent(
-            command.MailCredentialsDto.Email,
-            command.Receiver,
-            keys.publicKey,
-            keys.privateKey),
-            cancellationToken);
         
         var result = await _mailService.SendMessage(
             command.MailCredentialsDto, null, letter, cancellationToken);
 
         if (result.IsFailure)
             return result.Errors;
+        
+        await _publishEndpoint.Publish(new GotFriendshipDataEvent(
+                command.MailCredentialsDto.Email,
+                command.Receiver,
+                keys.publicKey,
+                keys.privateKey),
+            cancellationToken);
         
         _logger.LogInformation("Sent friend request from {first} to {second}",
             command.MailCredentialsDto.Email,

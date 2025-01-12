@@ -56,7 +56,7 @@ public static class MailKitExtensions
             messages.Add(new Letter
             {
                 Id = uids[i].Id,
-                From = message.From.ToString(),
+                From = message.From.Mailboxes.FirstOrDefault()!.Address,
                 Body = message.HtmlBody,
                 To = message.To.Select(t => t.ToString()).ToList(),
                 Subject = message.Subject,
@@ -100,7 +100,7 @@ public static class MailKitExtensions
         {
             Id = uId.Value.Id,
             Body = message.HtmlBody,
-            From = message.From.ToString(),
+            From = message.From.Mailboxes.FirstOrDefault()!.Address,
             To = message.To.Select(t => t.ToString()).ToList(),
             Subject = message.Subject,
             Date = message.Date.UtcDateTime,

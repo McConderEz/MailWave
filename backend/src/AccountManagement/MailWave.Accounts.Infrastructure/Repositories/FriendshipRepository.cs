@@ -1,6 +1,7 @@
 ﻿using MailWave.Accounts.Application.Repositories;
 using MailWave.Accounts.Domain.Models;
 using Microsoft.Extensions.Options;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDatabaseSettings = MailWave.Accounts.Infrastructure.Options.MongoDatabaseSettings;
 
@@ -22,14 +23,21 @@ public class FriendshipRepository: IFriendshipRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<Friendship> GetByEmails(
+    public async Task<Friendship?> GetByEmails(
         string firstUserEmail, string secondUserEmail, CancellationToken cancellationToken = default)
     {
         return await _friendshipCollection
             .Find(friendship => 
-                (friendship.FirstUserEmail == firstUserEmail || friendship.SecondUserEmail == firstUserEmail) && 
-                (friendship.SecondUserEmail == secondUserEmail || friendship.SecondUserEmail == secondUserEmail))
+                (friendship.FirstUserEmail == firstUserEmail && friendship.SecondUserEmail == secondUserEmail) || 
+                (friendship.FirstUserEmail == secondUserEmail && friendship.SecondUserEmail == firstUserEmail))
             .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task Update(
+        string friendshipId,BsonDocument updateSettings,  CancellationToken cancellationToken = default)
+    {
+        await _friendshipCollection.UpdateOneAsync(
+            friendship => friendship.Id == friendshipId,updateSettings, null, cancellationToken);
     }
 
     public async Task Delete(string friendshipId, CancellationToken cancellationToken = default)

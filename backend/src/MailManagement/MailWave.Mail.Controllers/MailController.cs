@@ -2,6 +2,7 @@
 using MailWave.Core.Models;
 using MailWave.Framework;
 using MailWave.Mail.Application.DTOs;
+using MailWave.Mail.Application.Features.Commands.AcceptFriendship;
 using MailWave.Mail.Application.Features.Commands.AddFriend;
 using MailWave.Mail.Application.Features.Commands.DeleteMessage;
 using MailWave.Mail.Application.Features.Commands.MoveMessage;
@@ -186,6 +187,26 @@ public class MailController: ApplicationController
     {
         var command = new AddFriendCommand(
             new MailCredentialsDto(mailCredentials.Email, mailCredentials.Password), request.Receiver);
+
+        var result = await handler.Handle(command, cancellationToken);
+
+        if (result.IsFailure)
+            result.Errors.ToResponse();
+
+        return Ok(result);
+    }
+    
+    [HttpPost("accepting-friend-request")]
+    public async Task<IActionResult> AcceptFriendship(
+        [FromForm] AcceptFriendRequest request,
+        [FromServices] MailCredentialsScopedData mailCredentials,
+        [FromServices] AcceptFriendshipHandler handler,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new AcceptFriendshipCommand(
+            new MailCredentialsDto(mailCredentials.Email, mailCredentials.Password),
+            request.EmailFolder,
+            request.MessageId);
 
         var result = await handler.Handle(command, cancellationToken);
 

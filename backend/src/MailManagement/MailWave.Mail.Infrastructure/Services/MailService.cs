@@ -275,7 +275,7 @@ public class MailService : IMailService
                 async _ =>
                 {
                     var letterFromFolder = await folder
-                        .GetMessageWithAttachmentsAsync(emailPrefix, messageId, cancellationToken);
+                        .GetMessageWithAttachmentsAsync(mailCredentialsDto.Email, messageId, cancellationToken);
 
                     if (letterFromFolder.IsFailure)
                         return null;

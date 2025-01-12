@@ -25,7 +25,7 @@ public class GotFriendshipDataEventConsumer: IConsumer<Mail.Contracts.Messaging.
     {
         var message = context.Message;
         
-        var friendship = await _repository.GetByEmails(message.FirstEmail, message.SecondEmail);
+        var friendship = await _repository.GetByEmails(message.FirstEmail, message.SecondEmail, context.CancellationToken);
         if (friendship is not null)
             throw new Exception("Friendship already exist");
 
@@ -40,7 +40,7 @@ public class GotFriendshipDataEventConsumer: IConsumer<Mail.Contracts.Messaging.
             PrivateKey = message.PrivateKey
         };
 
-        await _repository.Add(friendship);
+        await _repository.Add(friendship, context.CancellationToken);
         
         _logger.LogInformation("Added friendship {first} and {second}", message.FirstEmail, message.SecondEmail);
     }

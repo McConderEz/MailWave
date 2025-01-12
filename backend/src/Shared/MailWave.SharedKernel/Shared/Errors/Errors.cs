@@ -40,6 +40,12 @@ public static class Errors
             return Error.Failure(
                 "connection.error", "Cannot connect to mail, probably incorrect credentials");
         }
+        
+        public static Error IncorrectSubjectFormat()
+        {
+            return Error.Failure(
+                "subject.format.error", "Subject has incorrect format");
+        }
     }
 
     public static class Tokens
