@@ -9,4 +9,5 @@ public class MongoDatabaseSettings
 
     public string UsersCollectionName { get; set; } = null!;
     public string RefreshSessionsCollectionName { get; set; } = null!;
+    public string FriendShipCollectionName { get; set; } = null!;
 }

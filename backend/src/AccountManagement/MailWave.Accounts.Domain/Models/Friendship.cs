@@ -13,5 +13,9 @@ public class Friendship
     [BsonRequired]
     public string FirstUserId { get; set; } = String.Empty;
     [BsonRequired]
+    public string FirstUserEmail { get; set; } = string.Empty;
+    [BsonRequired]
     public string SecondUserId { get; set; } = String.Empty;
+    [BsonRequired]
+    public string SecondUserEmail { get; set; } = string.Empty;
 }
