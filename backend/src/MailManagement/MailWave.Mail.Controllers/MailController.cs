@@ -4,6 +4,7 @@ using MailWave.Framework;
 using MailWave.Mail.Application.DTOs;
 using MailWave.Mail.Application.Features.Commands.AcceptFriendship;
 using MailWave.Mail.Application.Features.Commands.AddFriend;
+using MailWave.Mail.Application.Features.Commands.DeleteFriend;
 using MailWave.Mail.Application.Features.Commands.DeleteMessage;
 using MailWave.Mail.Application.Features.Commands.MoveMessage;
 using MailWave.Mail.Application.Features.Commands.SaveMessagesInDatabase;
@@ -207,6 +208,24 @@ public class MailController: ApplicationController
             new MailCredentialsDto(mailCredentials.Email, mailCredentials.Password),
             request.EmailFolder,
             request.MessageId);
+
+        var result = await handler.Handle(command, cancellationToken);
+
+        if (result.IsFailure)
+            result.Errors.ToResponse();
+
+        return Ok(result);
+    }
+    
+    [HttpPost("deletion-friend")]
+    public async Task<IActionResult> DeleteFriend(
+        [FromForm] DeleteFriendRequest request,
+        [FromServices] MailCredentialsScopedData mailCredentials,
+        [FromServices] DeleteFriendHandler handler,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new DeleteFriendCommand(
+            new MailCredentialsDto(mailCredentials.Email, mailCredentials.Password), request.FriendEmail);
 
         var result = await handler.Handle(command, cancellationToken);
 

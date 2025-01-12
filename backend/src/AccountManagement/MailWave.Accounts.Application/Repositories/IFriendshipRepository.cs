@@ -10,7 +10,6 @@ public interface IFriendshipRepository
         string firstUserEmail, string secondUserEmail, CancellationToken cancellationToken = default);
     Task Delete(string friendshipId, CancellationToken cancellationToken = default);
     Task Add(Friendship friendship, CancellationToken cancellationToken = default);
-
     Task Update(
         string friendshipId, BsonDocument updateSettings, CancellationToken cancellationToken = default);
 }
