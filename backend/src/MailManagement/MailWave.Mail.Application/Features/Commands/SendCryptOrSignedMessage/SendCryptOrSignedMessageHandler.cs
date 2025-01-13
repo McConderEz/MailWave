@@ -36,6 +36,9 @@ public class SendCryptOrSignedMessageHandler : ICommandHandler<SendCryptOrSigned
         _rsaCryptProvider = rsaCryptProvider;
     }
 
+    //TODO: Отрефакторить
+    //TODO: Реализовать добавления ЭЦП к body и вложениям
+    
     public async Task<Result> Handle(
         SendCryptOrSignedMessageCommand command, CancellationToken cancellationToken = default)
     {
@@ -75,7 +78,7 @@ public class SendCryptOrSignedMessageHandler : ICommandHandler<SendCryptOrSigned
                 attachments = result.Value;
             }
             
-            attachments.AddRange(await AttachEncryptedKeyAndIv(keys.Value.key, keys.Value.iv, publicKey));
+            attachments.AddRange(AttachEncryptedKeyAndIv(keys.Value.key, keys.Value.iv, publicKey));
         }
 
         var sendingResult = await _mailService.SendMessage(
@@ -94,19 +97,19 @@ public class SendCryptOrSignedMessageHandler : ICommandHandler<SendCryptOrSigned
     /// <param name="iv">Вектор инициализации</param>
     /// <param name="publicKey">Публичный ключ RSA</param>
     /// <returns></returns>
-    private async Task<List<Attachment>> AttachEncryptedKeyAndIv(string key, string iv, string publicKey)
+    private List<Attachment> AttachEncryptedKeyAndIv(string key, string iv, string publicKey)
     {
         var encryptedKey = _rsaCryptProvider.Encrypt(key, publicKey);
         var encryptedIv = _rsaCryptProvider.Encrypt(iv, publicKey);
 
         var attachments = new List<Attachment>
         {
-            new Attachment
+            new()
             {
                 FileName = "key.key",
                 Content = new MemoryStream(Convert.FromBase64String(encryptedKey.Value))
             },
-            new Attachment
+            new()
             {
                 FileName = "iv.iv",
                 Content = new MemoryStream(Convert.FromBase64String(encryptedIv.Value))
@@ -178,6 +181,9 @@ public class SendCryptOrSignedMessageHandler : ICommandHandler<SendCryptOrSigned
             return body.Errors;
 
         letter.Body = body.Value;
+        
+        _logger.LogInformation("User {email} sent crypted/signed message to {receiver}",
+            command.MailCredentialsDto.Email, command.Receiver);
         
         return Result.Success();
     }
