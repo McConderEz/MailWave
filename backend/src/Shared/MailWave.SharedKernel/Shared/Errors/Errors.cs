@@ -46,6 +46,11 @@ public static class Errors
             return Error.Failure(
                 "subject.format.error", "Subject has incorrect format");
         }
+        
+        public static Error NotFriendError()
+        {
+            return Error.Conflict("not.friend.error", $"This user is not your friend");
+        }
     }
 
     public static class Tokens
@@ -59,6 +64,7 @@ public static class Errors
         {
             return Error.Validation("token.is.invalid", $"Your token is invalid");
         }
+        
     }
 
     public static class Volunteer
