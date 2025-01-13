@@ -35,12 +35,8 @@ public class CleanupInactiveClientsBackgroundService: BackgroundService
             _logger.LogInformation("CleanupInactiveClientsBackgroundService is working");
             
             await dispatcher.CleanupInactiveClientsAsync(stoppingToken);
-            
-            _logger.LogInformation("CleanupInactiveClientsBackgroundService is stopped");
 
             await Task.Delay(TimeSpan.FromMinutes(FREQUENCY_OF_REVISION), stoppingToken);
         }
-
-        await Task.CompletedTask;
     }
 }

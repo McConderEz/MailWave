@@ -135,7 +135,7 @@ public class SendCryptOrSignedMessageHandler : ICommandHandler<SendCryptOrSigned
         
         foreach (var attachment in command.AttachmentDtos!)
         {
-            await memoryStream.CopyToAsync(attachment.Content);
+            await attachment.Content.CopyToAsync(memoryStream);
             
             var data = memoryStream.ToArray();
 
