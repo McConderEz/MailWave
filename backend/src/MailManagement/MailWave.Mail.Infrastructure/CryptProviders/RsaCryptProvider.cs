@@ -31,7 +31,7 @@ public class RsaCryptProvider : IRsaCryptProvider
         {
             using var rsa = new RSACryptoServiceProvider();
 
-            rsa.ImportRSAPublicKey(Encoding.UTF8.GetBytes(publicKey),out _);
+            rsa.ImportRSAPublicKey(Convert.FromBase64String(publicKey),out _);
             
             var bytesData = Encoding.UTF8.GetBytes(inputData);
             
@@ -56,7 +56,7 @@ public class RsaCryptProvider : IRsaCryptProvider
         {
             using var rsa = new RSACryptoServiceProvider();
 
-            rsa.ImportRSAPrivateKey(Encoding.UTF8.GetBytes(privateKey),out _);
+            rsa.ImportRSAPrivateKey(Convert.FromBase64String(privateKey),out _);
             
             var bytesData = Encoding.UTF8.GetBytes(inputData);
             

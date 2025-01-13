@@ -32,9 +32,9 @@ public class DesCryptProvider : IDesCryptProvider
         {
             using var des = DES.Create();
 
-            var bytesIv = Encoding.UTF8.GetBytes(iv);
+            var bytesIv = Convert.FromBase64String(iv);
             
-            des.Key = Encoding.UTF8.GetBytes(key);
+            des.Key = Convert.FromBase64String(key);
             des.IV = bytesIv;
             des.Padding = PaddingMode.Zeros;
             

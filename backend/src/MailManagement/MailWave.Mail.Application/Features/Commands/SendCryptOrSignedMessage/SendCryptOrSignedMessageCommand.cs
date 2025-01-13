@@ -8,7 +8,7 @@ public record SendCryptOrSignedMessageCommand(
     MailCredentialsDto MailCredentialsDto,
     bool IsCrypted,
     bool IsSigned,
-    string Subject,
+    string? Subject,
     string? Body,
     string Receiver,
     IEnumerable<AttachmentDto>? AttachmentDtos) : ICommand;

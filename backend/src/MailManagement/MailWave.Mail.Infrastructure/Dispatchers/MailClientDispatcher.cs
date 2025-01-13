@@ -34,7 +34,8 @@ public class MailClientDispatcher : IDisposable
     /// <param name="password">Пароль к учётной записи</param>
     /// <param name="cancellationToken">Токен отмены</param>
     /// <returns></returns>
-    public async Task<ImapClient> GetImapClientAsync(string email, string password, CancellationToken cancellationToken)
+    public async Task<ImapClient> GetImapClientAsync(
+        string email, string password, CancellationToken cancellationToken = default)
     {
         if (!_imapClients.ContainsKey(email))
         {
@@ -63,7 +64,8 @@ public class MailClientDispatcher : IDisposable
     /// <param name="password">Пароль к учётной записи</param>
     /// <param name="cancellationToken">Токен отмены</param>
     /// <returns></returns>
-    public async Task<SmtpClient> GetSmtpClientAsync(string email, string password, CancellationToken cancellationToken)
+    public async Task<SmtpClient> GetSmtpClientAsync(
+        string email, string password, CancellationToken cancellationToken = default)
     {
         if (!_smtpClients.ContainsKey(email))
         {

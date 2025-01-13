@@ -2,6 +2,7 @@
 using MailWave.Accounts.Application.Features.Consumers.AcceptedFriendshipEvent;
 using MailWave.Accounts.Application.Features.Consumers.DeletedFriendshipEvent;
 using MailWave.Accounts.Application.Features.Consumers.GotFriendshipDataEvent;
+using MailWave.Accounts.Controllers;
 using MailWave.Accounts.Infrastructure;
 using MailWave.Core.Models;
 using MailWave.Mail.Application;
@@ -26,6 +27,7 @@ public static class DependencyInjection
             .AddAccountInfrastructure(configuration)
             .AddMailInfrastructure(configuration)
             .AddMailControllers()
+            .AddAccountControllers()
             .AddMailApplication()
             .AddCore()
             .AddMessageBus(configuration);

@@ -8,6 +8,7 @@ using MailWave.Mail.Application.Features.Commands.DeleteFriend;
 using MailWave.Mail.Application.Features.Commands.DeleteMessage;
 using MailWave.Mail.Application.Features.Commands.MoveMessage;
 using MailWave.Mail.Application.Features.Commands.SaveMessagesInDatabase;
+using MailWave.Mail.Application.Features.Commands.SendCryptOrSignedMessage;
 using MailWave.Mail.Application.Features.Commands.SendMessage;
 using MailWave.Mail.Application.Features.Commands.SendScheduledMessage;
 using MailWave.Mail.Application.Features.Queries.GetMessageFromFolderById;
@@ -208,6 +209,33 @@ public class MailController: ApplicationController
             new MailCredentialsDto(mailCredentials.Email, mailCredentials.Password),
             request.EmailFolder,
             request.MessageId);
+
+        var result = await handler.Handle(command, cancellationToken);
+
+        if (result.IsFailure)
+            result.Errors.ToResponse();
+
+        return Ok(result);
+    }
+    
+    [HttpPost("sending-crypted-and-signed-message")]
+    public async Task<IActionResult> SendCryptedAndSignedMessage(
+        [FromForm] SendCryptedAndSignedMessageRequest request,
+        [FromForm] IFormFileCollection? attachments,
+        [FromServices] MailCredentialsScopedData mailCredentials,
+        [FromServices] SendCryptOrSignedMessageHandler handler,
+        CancellationToken cancellationToken = default)
+    {
+        var attachmentDtos = LoadAttachments(attachments);
+
+        var command = new SendCryptOrSignedMessageCommand(
+            new MailCredentialsDto(mailCredentials.Email, mailCredentials.Password),
+            request.IsCrypted,
+            request.IsSigned,
+            request.Subject,
+            request.Body,
+            request.Receivers,
+            attachmentDtos);
 
         var result = await handler.Handle(command, cancellationToken);
 
