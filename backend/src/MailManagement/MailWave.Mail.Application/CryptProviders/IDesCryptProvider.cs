@@ -11,7 +11,7 @@ public interface IDesCryptProvider
     /// <param name="key">Ключ</param>
     /// <param name="iv">Вектор инициализации</param>
     /// <returns></returns>
-    Result<byte[]> Encrypt(string inputData, byte[] key, byte[] iv);
+    Result<byte[]> Encrypt(byte[] inputData, byte[] key, byte[] iv);
 
     /// <summary>
     /// Дешифрование данных алгоритмом DES
@@ -20,7 +20,7 @@ public interface IDesCryptProvider
     /// <param name="key">Ключ</param>
     /// <param name="iv">Вектор инициализации</param>
     /// <returns></returns>
-    Result<byte[]> Decrypt(string inputData, byte[] key, byte[] iv);
+    Result<byte[]> Decrypt(byte[] inputData, byte[] key, byte[] iv);
 
     /// <summary>
     /// Генерация ключей DES

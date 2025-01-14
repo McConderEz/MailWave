@@ -26,7 +26,7 @@ public class DesCryptProvider : IDesCryptProvider
     /// <param name="key">Ключ</param>
     /// <param name="iv">Вектор инициализации</param>
     /// <returns></returns>
-    public Result<byte[]> Encrypt(string inputData, byte[] key, byte[] iv)
+    public Result<byte[]> Encrypt(byte[] inputData, byte[] key, byte[] iv)
     {
         try
         {
@@ -34,11 +34,9 @@ public class DesCryptProvider : IDesCryptProvider
             
             des.Key = key;
             des.IV = iv;
-            des.Padding = PaddingMode.Zeros;
+            des.Padding = PaddingMode.PKCS7;
             
-            var bytesData = Encoding.UTF8.GetBytes(inputData);
-            
-            return des.EncryptCfb(bytesData, iv);
+            return des.EncryptCfb(inputData, iv);
         }
         catch (Exception ex)
         {
@@ -54,7 +52,7 @@ public class DesCryptProvider : IDesCryptProvider
     /// <param name="key">Ключ</param>
     /// <param name="iv">Вектор инициализации</param>
     /// <returns></returns>
-    public Result<byte[]> Decrypt(string inputData, byte[] key, byte[] iv)
+    public Result<byte[]> Decrypt(byte[] inputData, byte[] key, byte[] iv)
     {
         try
         {
@@ -62,11 +60,9 @@ public class DesCryptProvider : IDesCryptProvider
             
             des.Key = key;
             des.IV = iv;
-            des.Padding = PaddingMode.Zeros;
-
-            var bytesData = Encoding.UTF8.GetBytes(inputData);
+            des.Padding = PaddingMode.PKCS7;
             
-            return des.DecryptCfb(bytesData, iv);
+            return des.DecryptCfb(inputData, iv);
         }
         catch (Exception ex)
         {

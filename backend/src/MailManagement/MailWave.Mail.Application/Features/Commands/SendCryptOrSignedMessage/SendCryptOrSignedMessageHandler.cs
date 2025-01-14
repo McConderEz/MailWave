@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+﻿using System.Text;
+using FluentValidation;
 using MailWave.Accounts.Contracts;
 using MailWave.Core.Abstractions;
 using MailWave.Core.Extensions;
@@ -144,9 +145,7 @@ public class SendCryptOrSignedMessageHandler : ICommandHandler<SendCryptOrSigned
             
             var data = memoryStream.ToArray();
 
-            var stringData = Convert.ToBase64String(data);
-
-            var encryptData = _desCryptProvider.Encrypt(stringData, key, iv);
+            var encryptData = _desCryptProvider.Encrypt(data, key, iv);
             if (encryptData.IsFailure)
                 return encryptData.Errors;
 
@@ -178,7 +177,7 @@ public class SendCryptOrSignedMessageHandler : ICommandHandler<SendCryptOrSigned
         if (command.Body is null)
             return Error.Null("body.null", "Body is null");
             
-        var body = _desCryptProvider.Encrypt(command.Body, key, iv);
+        var body = _desCryptProvider.Encrypt(Encoding.UTF8.GetBytes(command.Body), key, iv);
         if (body.IsFailure)
             return body.Errors;
 

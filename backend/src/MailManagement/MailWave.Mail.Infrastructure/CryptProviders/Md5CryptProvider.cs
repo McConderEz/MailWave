@@ -18,8 +18,8 @@ public class Md5CryptProvider : IMd5CryptProvider
     public Result<string> ComputeHash(string inputData)
     {
         using var md5 = MD5.Create();
-        byte[] inputBytes = Encoding.UTF8.GetBytes(inputData);
-        byte[] hashBytes = md5.ComputeHash(inputBytes);
+        var inputBytes = Encoding.UTF8.GetBytes(inputData);
+        var hashBytes = md5.ComputeHash(inputBytes);
 
         StringBuilder sb = new StringBuilder();
         foreach (byte b in hashBytes)

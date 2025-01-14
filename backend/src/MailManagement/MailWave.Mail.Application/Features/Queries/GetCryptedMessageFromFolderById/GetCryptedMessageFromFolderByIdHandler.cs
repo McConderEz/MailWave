@@ -74,22 +74,28 @@ public class GetCryptedMessageFromFolderByIdHandler: IQueryHandler<Letter, GetCr
             return attachments.Errors;
 
         var key = attachments.Value.FirstOrDefault(a => a.FileName.EndsWith(".key"));
-        using var srKey = new StreamReader(key.Content, Encoding.UTF8);
+        using var srKey = new StreamReader(key!.Content, Encoding.UTF8);
         var keyString = await srKey.ReadToEndAsync(cancellationToken);
         
         var iv = attachments.Value.FirstOrDefault(a => a.FileName.EndsWith(".iv"));
         using var srIv = new StreamReader(iv!.Content, Encoding.UTF8);
         var ivString = await srIv.ReadToEndAsync(cancellationToken);
         
-        var decryptedKey = _rsaCryptProvider.Decrypt(keyString, Convert.FromBase64String(privateKey));
-        var decryptedIv = _rsaCryptProvider.Decrypt(ivString, Convert.FromBase64String(privateKey));
+        var decryptedKey = _rsaCryptProvider.Decrypt(
+            keyString, Convert.FromBase64String(privateKey));
+        
+        var decryptedIv = _rsaCryptProvider.Decrypt(
+            ivString, Convert.FromBase64String(privateKey));
 
-        var decryptedBody = _desCryptProvider.Decrypt(message.Value.Body!, decryptedKey.Value, decryptedIv.Value);
+        var decryptedBody = _desCryptProvider.Decrypt(
+            Convert.FromBase64String(message.Value.Body!),
+            decryptedKey.Value,
+            decryptedIv.Value);
 
         if (decryptedBody.IsFailure)
             return decryptedBody.Errors;
 
-        var body = Convert.ToBase64String(decryptedBody.Value);
+        var body = Encoding.UTF8.GetString(decryptedBody.Value);
         
         attachments.Value.ForEach(a => a.Content.Close());
         
