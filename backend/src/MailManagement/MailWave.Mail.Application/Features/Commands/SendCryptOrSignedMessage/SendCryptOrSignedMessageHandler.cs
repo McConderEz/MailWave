@@ -55,32 +55,20 @@ public class SendCryptOrSignedMessageHandler : ICommandHandler<SendCryptOrSigned
         if (publicKey == String.Empty || privateKey == String.Empty)
             return Errors.MailErrors.NotFriendError();
 
-        var letter = new Letter() { Subject = command.Subject, To = [command.Receiver] };
-        List<Attachment> attachments = new List<Attachment>();
+        var letter = new Letter { Subject = command.Subject, To = [command.Receiver] };
+        List<Attachment> attachments = [];
         
         if (command.IsCrypted)
         {
-            var keys = _desCryptProvider.GenerateKey();
-            if (keys.IsFailure)
-                return Error.Failure("generation.keys.error", "Generation keys failure");
+            var result = await HandleCryptedMessage(command, letter, publicKey, attachments);
             
-            if (command.Body is not null && command.Body != String.Empty)
-            {
-                var result = CryptBody(command, letter, keys.Value.key, keys.Value.iv);
-                if (result.IsFailure)
-                    return result.Errors;
-            }
+            if (result.IsFailure)
+                return result.Errors;
+        }
 
-            if (command.AttachmentDtos?.Count() > 0)
-            {
-                var result = await CryptAttachments(command, letter, keys.Value.key, keys.Value.iv);
-                if (result.IsFailure)
-                    return result.Errors;
-                attachments = result.Value;
-            }
-            
-            attachments.AddRange(AttachEncryptedKeyAndIv(
-                keys.Value.key, keys.Value.iv, Convert.FromBase64String(publicKey)));
+        if (command.IsSigned)
+        {
+            //TODO: Реализовать
         }
 
         var sendingResult = await _mailService.SendMessage(
@@ -93,6 +81,54 @@ public class SendCryptOrSignedMessageHandler : ICommandHandler<SendCryptOrSigned
     }
 
     /// <summary>
+    /// Обработка шифрованного сообщения
+    /// </summary>
+    /// <param name="command">Команда с входными параметрами</param>
+    /// <param name="letter">Письмо</param>
+    /// <param name="publicKey">Публичный ключ RSA</param>
+    /// <param name="attachments">Коллекция вложений</param>
+    /// <returns></returns>
+    private async Task<Result> HandleCryptedMessage(
+        SendCryptOrSignedMessageCommand command,
+        Letter letter,
+        string publicKey,
+        List<Attachment> attachments)
+    {
+        //Генерация ключей DES
+        var keys = _desCryptProvider.GenerateKey();
+        if (keys.IsFailure)
+            return Error.Failure("generation.keys.error", "Generation keys failure");
+        
+        //Проверяем наличие тела письма
+        if (command.Body is not null && command.Body != String.Empty)
+        {
+            //Шифруем тело письма
+            var result = CryptBody(command, letter, keys.Value.key, keys.Value.iv);
+                
+            if (result.IsFailure)
+                return result.Errors;
+        }
+
+        //Проверяем наличие вложений
+        if (command.AttachmentDtos?.Count() > 0)
+        {
+            //Шифруем вложения
+            var result = await CryptAttachments(command, letter, keys.Value.key, keys.Value.iv);
+                
+            if (result.IsFailure)
+                return result.Errors;
+                
+            attachments = result.Value;
+        }
+        
+        //Шифруем публичным RSA ключом DES ключ и вектор инициализации и прикрепляем, как вложения
+        attachments.AddRange(AttachEncryptedKeyAndIv(
+            keys.Value.key, keys.Value.iv, Convert.FromBase64String(publicKey)));
+        
+        return Result.Success();
+    }
+
+    /// <summary>
     /// Шифрование ключа и вектора инициализации RSA алгоритмом
     /// </summary>
     /// <param name="key">Ключ</param>
@@ -101,6 +137,7 @@ public class SendCryptOrSignedMessageHandler : ICommandHandler<SendCryptOrSigned
     /// <returns></returns>
     private List<Attachment> AttachEncryptedKeyAndIv(byte[] key, byte[] iv, byte[] publicKey)
     {
+        //Шифрование ключа и вектора инициализации публичным RSA ключом
         var encryptedKey = _rsaCryptProvider.Encrypt(Convert.ToBase64String(key), publicKey);
         var encryptedIv = _rsaCryptProvider.Encrypt(Convert.ToBase64String(iv), publicKey);
 
@@ -137,6 +174,8 @@ public class SendCryptOrSignedMessageHandler : ICommandHandler<SendCryptOrSigned
     {
         var attachments = new List<Attachment>();
         
+        //Проходим по вложениям, шифруем содержимое DES алгоритмом
+        //Добавляем в коллекцию вложений физическую сущность, а в письмо название вложения
         foreach (var attachment in command.AttachmentDtos!)
         {
             using var memoryStream = new MemoryStream();
@@ -171,12 +210,14 @@ public class SendCryptOrSignedMessageHandler : ICommandHandler<SendCryptOrSigned
     /// <returns></returns>
     private Result CryptBody(SendCryptOrSignedMessageCommand command, Letter letter, byte[] key, byte[] iv)
     {
+        //Устанавливаем флаг, что письмо зашифровано и добавляем тег в тему 
         letter.IsCrypted = true;
         letter.Subject += Domain.Constraints.Constraints.CRYPTED_SUBJECT;
         
         if (command.Body is null)
             return Error.Null("body.null", "Body is null");
-            
+        
+        //Шифруем тело DES
         var body = _desCryptProvider.Encrypt(Encoding.UTF8.GetBytes(command.Body), key, iv);
         if (body.IsFailure)
             return body.Errors;
