@@ -67,8 +67,8 @@ public class AddFriendHandler: ICommandHandler<AddFriendCommand>
         await _publishEndpoint.Publish(new GotFriendshipDataEvent(
                 command.MailCredentialsDto.Email,
                 command.Receiver,
-                keys.publicKey,
-                keys.privateKey),
+                Convert.ToBase64String(keys.publicKey),
+                Convert.ToBase64String(keys.privateKey)),
             cancellationToken);
         
         _logger.LogInformation("Sent friend request from {first} to {second}",

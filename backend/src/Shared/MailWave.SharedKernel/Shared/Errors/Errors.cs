@@ -66,44 +66,13 @@ public static class Errors
         }
         
     }
-
-    public static class Volunteer
-    {
-        //TODO: Удалить и поменять на General
-        public static Error AlreadyExist()
-        {
-            return Error.Validation("Record.already.exist", $"Volunteer already exist");
-        }
-
-        public static Error PetPositionOutOfRange()
-        {
-            return Error.Validation("Position.out.of.range", "Pet position is out of range");
-        }
-    }
+    
 
     public static class User
     {
         public static Error InvalidCredentials()
         {
             return Error.Validation("credentials.is.invalid", "Your credentials is invalid");
-        }
-    }
-    
-    public static class Species
-    {
-        public static Error DeleteConflict()
-        {
-            return Error.Conflict("Exist.dependent.records", "Cannot delete because there are records that depend on it");
-        }
-        
-        public static Error AlreadyExist()
-        {
-            return Error.Validation("Record.already.exist", $"Species already exist");
-        }
-        
-        public static Error BreedAlreadyExist()
-        {
-            return Error.Validation("Record.already.exist", $"Breed of this species already exist");
         }
     }
 }

@@ -78,7 +78,8 @@ public class SendCryptOrSignedMessageHandler : ICommandHandler<SendCryptOrSigned
                 attachments = result.Value;
             }
             
-            attachments.AddRange(AttachEncryptedKeyAndIv(keys.Value.key, keys.Value.iv, publicKey));
+            attachments.AddRange(AttachEncryptedKeyAndIv(
+                keys.Value.key, keys.Value.iv, Convert.FromBase64String(publicKey)));
         }
 
         var sendingResult = await _mailService.SendMessage(
@@ -97,22 +98,22 @@ public class SendCryptOrSignedMessageHandler : ICommandHandler<SendCryptOrSigned
     /// <param name="iv">Вектор инициализации</param>
     /// <param name="publicKey">Публичный ключ RSA</param>
     /// <returns></returns>
-    private List<Attachment> AttachEncryptedKeyAndIv(string key, string iv, string publicKey)
+    private List<Attachment> AttachEncryptedKeyAndIv(byte[] key, byte[] iv, byte[] publicKey)
     {
-        var encryptedKey = _rsaCryptProvider.Encrypt(key, publicKey);
-        var encryptedIv = _rsaCryptProvider.Encrypt(iv, publicKey);
+        var encryptedKey = _rsaCryptProvider.Encrypt(Convert.ToBase64String(key), publicKey);
+        var encryptedIv = _rsaCryptProvider.Encrypt(Convert.ToBase64String(iv), publicKey);
 
         var attachments = new List<Attachment>
         {
             new()
             {
                 FileName = "key.key",
-                Content = new MemoryStream(Convert.FromBase64String(encryptedKey.Value))
+                Content = new MemoryStream(encryptedKey.Value)
             },
             new()
             {
                 FileName = "iv.iv",
-                Content = new MemoryStream(Convert.FromBase64String(encryptedIv.Value))
+                Content = new MemoryStream(encryptedIv.Value)
             }
         };
 
@@ -130,7 +131,8 @@ public class SendCryptOrSignedMessageHandler : ICommandHandler<SendCryptOrSigned
     private async Task<Result<List<Attachment>>> CryptAttachments(
         SendCryptOrSignedMessageCommand command,
         Letter letter,
-        string key, string iv)
+        byte[] key,
+        byte[] iv)
     {
         var attachments = new List<Attachment>();
 
@@ -151,7 +153,7 @@ public class SendCryptOrSignedMessageHandler : ICommandHandler<SendCryptOrSigned
             attachments.Add(new Attachment
             {
                 FileName = attachment.FileName,
-                Content = new MemoryStream(Convert.FromBase64String(encryptData.Value))
+                Content = new MemoryStream(encryptData.Value)
             });
             
             letter.AttachmentNames.Add(attachment.FileName);
@@ -168,7 +170,7 @@ public class SendCryptOrSignedMessageHandler : ICommandHandler<SendCryptOrSigned
     /// <param name="key">Ключ Des</param>
     /// <param name="iv">Вектор инициализации Des</param>
     /// <returns></returns>
-    private Result CryptBody(SendCryptOrSignedMessageCommand command, Letter letter, string key, string iv)
+    private Result CryptBody(SendCryptOrSignedMessageCommand command, Letter letter, byte[] key, byte[] iv)
     {
         letter.IsCrypted = true;
         letter.Subject += Domain.Constraints.Constraints.CRYPTED_SUBJECT;
@@ -180,7 +182,7 @@ public class SendCryptOrSignedMessageHandler : ICommandHandler<SendCryptOrSigned
         if (body.IsFailure)
             return body.Errors;
 
-        letter.Body = body.Value;
+        letter.Body = Convert.ToBase64String(body.Value);
         
         _logger.LogInformation("User {email} sent crypted/signed message to {receiver}",
             command.MailCredentialsDto.Email, command.Receiver);

@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+﻿using System.Text;
+using FluentValidation;
 using MailWave.Accounts.Contracts;
 using MailWave.Core.Abstractions;
 using MailWave.Core.Extensions;
@@ -49,7 +50,7 @@ public class GetCryptedMessageFromFolderByIdHandler: IQueryHandler<Letter, GetCr
             query.MessageId,
             cancellationToken);
 
-        if (!message.Value.IsCrypted && !message.Value.IsSigned)
+        if (message.Value is { IsCrypted: false, IsSigned: false })
             return Error.Failure("message.not.crypted.signed", "Message is not crypted/signed");
         
         var (publicKey, privateKey) = await _accountContract.GetCryptData(
@@ -62,9 +63,29 @@ public class GetCryptedMessageFromFolderByIdHandler: IQueryHandler<Letter, GetCr
         
         if (message.IsFailure)
             return message.Errors;
-        
-        //var result = _rsaCryptProvider.Decrypt()
 
+        var attachments = await _mailService.GetAttachmentsOfMessage(
+            query.MailCredentialsDto,
+            query.EmailFolder,
+            query.MessageId,
+            cancellationToken);
+
+        if (attachments.IsFailure)
+            return attachments.Errors;
+
+        var key = attachments.Value.FirstOrDefault(a => a.FileName.EndsWith(".key"));
+        using var srKey = new StreamReader(key.Content, Encoding.UTF8);
+        var keyString = await srKey.ReadToEndAsync(cancellationToken);
+        
+        var iv = attachments.Value.FirstOrDefault(a => a.FileName.EndsWith(".iv"));
+        using var srIv = new StreamReader(iv!.Content, Encoding.UTF8);
+        var ivString = await srIv.ReadToEndAsync(cancellationToken);
+        
+        var decryptedKey = _rsaCryptProvider.Decrypt(keyString, Convert.FromBase64String(privateKey));
+        var decryptedIv = _rsaCryptProvider.Decrypt(ivString, Convert.FromBase64String(privateKey));
+
+        attachments.Value.ForEach(a => a.Content.Close());
+        
         _logger.LogInformation("User {email} got message from folder {folder}",
             query.MailCredentialsDto.Email, query.EmailFolder);
         

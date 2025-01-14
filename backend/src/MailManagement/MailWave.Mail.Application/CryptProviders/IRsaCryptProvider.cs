@@ -10,7 +10,7 @@ public interface IRsaCryptProvider
     /// <param name="inputData">Входные данные</param>
     /// <param name="publicKey">Публичный ключ для шифрования</param>
     /// <returns></returns>
-    Result<string> Encrypt(string inputData, string publicKey);
+    Result<byte[]> Encrypt(string inputData, byte[] publicKey);
 
     /// <summary>
     /// Дешифрование данных алгоритмом RSA
@@ -18,13 +18,13 @@ public interface IRsaCryptProvider
     /// <param name="inputData">Входные данные</param>
     /// <param name="privateKey">Приватный ключ для дешифрования</param>
     /// <returns></returns>
-    Result<string> Decrypt(string inputData, string privateKey);
+    Result<byte[]> Decrypt(string inputData, byte[] privateKey);
 
     /// <summary>
     /// Генерация ключей RSA
     /// </summary>
     /// <returns>Публичный и приватный ключ</returns>
-    (string publicKey, string privateKey) GenerateKey();
+    (byte[] publicKey, byte[] privateKey) GenerateKey();
 
     /// <summary>
     /// Подпись данных RSA с помощью MD5

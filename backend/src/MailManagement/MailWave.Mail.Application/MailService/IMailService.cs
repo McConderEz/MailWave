@@ -110,4 +110,18 @@ public interface IMailService
         Letter letter,
         DateTime enqueueAt,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Получение вложений письма
+    /// </summary>
+    /// <param name="mailCredentialsDto">Данные учётной записи пользователя</param>
+    /// <param name="selectedFolder">Выбранная папка</param>
+    /// <param name="messageId">Уникальный идентификатор сообщения</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns></returns>
+    Task<Result<List<Attachment>>> GetAttachmentsOfMessage(
+        MailCredentialsDto mailCredentialsDto,
+        EmailFolder selectedFolder,
+        uint messageId,
+        CancellationToken cancellationToken = default);
 }

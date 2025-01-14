@@ -26,21 +26,19 @@ public class DesCryptProvider : IDesCryptProvider
     /// <param name="key">Ключ</param>
     /// <param name="iv">Вектор инициализации</param>
     /// <returns></returns>
-    public Result<string> Encrypt(string inputData, string key, string iv)
+    public Result<byte[]> Encrypt(string inputData, byte[] key, byte[] iv)
     {
         try
         {
             using var des = DES.Create();
-
-            var bytesIv = Convert.FromBase64String(iv);
             
-            des.Key = Convert.FromBase64String(key);
-            des.IV = bytesIv;
+            des.Key = key;
+            des.IV = iv;
             des.Padding = PaddingMode.Zeros;
             
             var bytesData = Encoding.UTF8.GetBytes(inputData);
             
-            return Convert.ToBase64String(des.EncryptCfb(bytesData, bytesIv));
+            return des.EncryptCfb(bytesData, iv);
         }
         catch (Exception ex)
         {
@@ -56,21 +54,19 @@ public class DesCryptProvider : IDesCryptProvider
     /// <param name="key">Ключ</param>
     /// <param name="iv">Вектор инициализации</param>
     /// <returns></returns>
-    public Result<string> Decrypt(string inputData, string key, string iv)
+    public Result<byte[]> Decrypt(string inputData, byte[] key, byte[] iv)
     {
         try
         {
             using var des = DES.Create();
             
-            var bytesIv = Encoding.UTF8.GetBytes(iv);
-            
-            des.Key = Encoding.UTF8.GetBytes(key);
-            des.IV = bytesIv;
+            des.Key = key;
+            des.IV = iv;
             des.Padding = PaddingMode.Zeros;
 
             var bytesData = Encoding.UTF8.GetBytes(inputData);
             
-            return Convert.ToBase64String(des.DecryptCfb(bytesData, bytesIv));
+            return des.DecryptCfb(bytesData, iv);
         }
         catch (Exception ex)
         {
@@ -83,13 +79,10 @@ public class DesCryptProvider : IDesCryptProvider
     /// Генерация ключей DES
     /// </summary>
     /// <returns>Пара ключ и вектор инициализации</returns>
-    public Result<(string key, string iv)> GenerateKey()
+    public Result<(byte[] key, byte[] iv)> GenerateKey()
     {
         using var desKey = DES.Create();
-
-        var key = Convert.ToBase64String(desKey.Key);
-        var iv = Convert.ToBase64String(desKey.IV);
         
-        return (key, iv);
+        return (desKey.Key, desKey.IV);
     }
 }

@@ -11,6 +11,7 @@ using MailWave.Mail.Application.Features.Commands.SaveMessagesInDatabase;
 using MailWave.Mail.Application.Features.Commands.SendCryptOrSignedMessage;
 using MailWave.Mail.Application.Features.Commands.SendMessage;
 using MailWave.Mail.Application.Features.Commands.SendScheduledMessage;
+using MailWave.Mail.Application.Features.Queries.GetCryptedMessageFromFolderById;
 using MailWave.Mail.Application.Features.Queries.GetMessageFromFolderById;
 using MailWave.Mail.Application.Features.Queries.GetMessagesFromFolderWithPagination;
 using MailWave.Mail.Contracts.Requests;
@@ -54,6 +55,27 @@ public class MailController: ApplicationController
         CancellationToken cancellationToken = default)
     {
         var query = new GetMessageFromFolderByIdQuery(
+            new MailCredentialsDto(mailCredentials.Email, mailCredentials.Password),
+            request.EmailFolder,
+            (uint)messageId);
+
+        var result = await handler.Handle(query, cancellationToken);
+
+        if (result.IsFailure)
+            result.Errors.ToResponse();
+
+        return Ok(result);
+    }
+    
+    [HttpGet("{messageId:int}/crypted-signed-message-from-folder-by-id")]
+    public async Task<IActionResult> GetCryptedAndSignedMessageFromFolderById(
+        [FromRoute] int messageId,
+        [FromQuery] GetCryptedAndSignedMessageFromFolderByIdRequest request,
+        [FromServices] MailCredentialsScopedData mailCredentials,
+        [FromServices] GetCryptedMessageFromFolderByIdHandler handler,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetCryptedMessageFromFolderByIdQuery(
             new MailCredentialsDto(mailCredentials.Email, mailCredentials.Password),
             request.EmailFolder,
             (uint)messageId);

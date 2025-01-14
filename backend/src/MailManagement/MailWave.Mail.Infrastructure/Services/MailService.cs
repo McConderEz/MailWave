@@ -32,8 +32,6 @@ public class MailService : IMailService
     private readonly HybridCache _hybridCache;
     private readonly EmailValidator _validator;
     private readonly MailClientDispatcher _dispatcher;
-
-    //TODO: Все письма при получении пока что не проставляют false/true в IsCrypted/IsSigned
     
     public MailService(
         ILogger<MailService> logger,
@@ -304,6 +302,52 @@ public class MailService : IMailService
         }
     }
 
+    /// <summary>
+    /// Получение вложений письма
+    /// </summary>
+    /// <param name="mailCredentialsDto">Данные учётной записи пользователя</param>
+    /// <param name="selectedFolder">Выбранная папка</param>
+    /// <param name="messageId">Уникальный идентификатор сообщения</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns></returns>
+    public async Task<Result<List<Attachment>>> GetAttachmentsOfMessage(
+        MailCredentialsDto mailCredentialsDto,
+        EmailFolder selectedFolder,
+        uint messageId,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var client = await _dispatcher.GetImapClientAsync(
+                mailCredentialsDto.Email, mailCredentialsDto.Password, cancellationToken);
+
+            var folder = await SelectFolder(selectedFolder, mailCredentialsDto.Email, client, cancellationToken);
+
+            await folder.OpenAsync(FolderAccess.ReadWrite, cancellationToken);
+
+            var attachments = await folder.GetAttachmentOfMessage(messageId, cancellationToken);
+
+            if (attachments.IsFailure)
+                return attachments.Errors;
+            
+            await folder.CloseAsync(true, cancellationToken);
+            
+            _dispatcher.UpdateImapSessionActivity(mailCredentialsDto.Email);
+            
+            _logger.LogInformation("Got attachments of message from folder {folder} with message id {messageId}",
+                selectedFolder.ToString(), messageId);
+            
+            return attachments;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Cannot get attachments of message with id {messageId}. Ex. message: {ex}",
+                messageId, ex.Message);
+            
+            return Error.Failure("message.receive.error","Cannot get message");
+        }
+    }
+    
     /// <summary>
     /// Отправка запланированного сообщения
     /// </summary>

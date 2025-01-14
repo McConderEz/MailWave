@@ -1,10 +1,14 @@
-﻿using MailKit;
+﻿using System.Net.Mail;
+using MailKit;
 using MailKit.Net.Imap;
-using MailKit.Net.Smtp;
 using MailKit.Search;
 using MailWave.Mail.Domain.Entities;
 using MailWave.SharedKernel.Shared;
 using MailWave.SharedKernel.Shared.Errors;
+using MimeKit;
+using Attachment = System.Net.Mail.Attachment;
+using Constraints = MailWave.Mail.Domain.Constraints.Constraints;
+using SmtpClient = MailKit.Net.Smtp.SmtpClient;
 
 namespace MailWave.Mail.Infrastructure.Extensions;
 
@@ -62,6 +66,8 @@ public static class MailKitExtensions
                 Subject = message.Subject,
                 Date = message.Date.UtcDateTime,
                 Folder = folder.Name,
+                IsCrypted = message.Subject.Contains(Constraints.CRYPTED_SUBJECT),
+                IsSigned = message.Subject.Contains(Constraints.SIGNED_SUBJECT),
                 EmailPrefix = emailPrefix
             });
         }
@@ -103,6 +109,8 @@ public static class MailKitExtensions
             From = message.From.Mailboxes.FirstOrDefault()!.Address,
             To = message.To.Select(t => t.ToString()).ToList(),
             Subject = message.Subject,
+            IsCrypted = message.Subject.Contains(Constraints.CRYPTED_SUBJECT),
+            IsSigned = message.Subject.Contains(Constraints.SIGNED_SUBJECT),
             Date = message.Date.UtcDateTime,
             Folder = folder.Name,
             EmailPrefix = emailPrefix
@@ -120,6 +128,52 @@ public static class MailKitExtensions
         return letter;
     }
 
+    /// <summary>
+    /// Получение вложений письма
+    /// </summary>
+    /// <param name="folder">Выбранная папка</param>
+    /// <param name="messageId">Уникальный идентификатор письма</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns></returns>
+    public static async Task<Result<List<Domain.Entities.Attachment>>> GetAttachmentOfMessage(
+        this IMailFolder folder,
+        uint messageId,
+        CancellationToken cancellationToken = default)
+    {
+        UniqueId? uId = (await folder.SearchAsync(SearchQuery.All, cancellationToken))
+            .FirstOrDefault(u => u.Id == messageId);
+
+        if (uId is null)
+            return Error.Failure("not.found",$"Cannot find letter with uid {messageId}");
+            
+        var message = await folder.GetMessageAsync(uId.Value, cancellationToken);
+
+        if (message is null)
+            return Error.Failure("get.message.error",$"Cannot get message");
+
+        List<Domain.Entities.Attachment> attachments = [];
+        
+        if (message.Attachments.Count() != 0)
+        {
+            foreach (var attachment in message.Attachments)
+            {
+                if (attachment is not MimePart part) continue;
+        
+                using var stream = new MemoryStream();
+                await part.Content.WriteToAsync(stream, cancellationToken);
+                stream.Position = 0;
+        
+                attachments.Add(new Domain.Entities.Attachment
+                {
+                    FileName = attachment.ContentDisposition.FileName,
+                    Content = stream
+                });
+            }
+        }
+
+        return attachments;
+    }
+    
 
     /// <summary>
     /// Подключение к smtp серверу с автоматическим подбором хоста и порта

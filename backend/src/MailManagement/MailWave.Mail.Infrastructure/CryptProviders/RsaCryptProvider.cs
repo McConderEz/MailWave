@@ -25,17 +25,17 @@ public class RsaCryptProvider : IRsaCryptProvider
     /// <param name="inputData">Входные данные</param>
     /// <param name="publicKey">Публичный ключ для шифрования</param>
     /// <returns></returns>
-    public Result<string> Encrypt(string inputData, string publicKey)
+    public Result<byte[]> Encrypt(string inputData, byte[] publicKey)
     {
         try
         {
             using var rsa = new RSACryptoServiceProvider();
 
-            rsa.ImportRSAPublicKey(Convert.FromBase64String(publicKey),out _);
+            rsa.ImportRSAPublicKey(publicKey,out _);
             
-            var bytesData = Encoding.UTF8.GetBytes(inputData);
+            var bytesData = Convert.FromBase64String(inputData);
             
-            return Convert.ToBase64String(rsa.Encrypt(bytesData, false));
+            return rsa.Encrypt(bytesData, false);
         }
         catch (Exception ex)
         {
@@ -50,17 +50,17 @@ public class RsaCryptProvider : IRsaCryptProvider
     /// <param name="inputData">Входные данные</param>
     /// <param name="privateKey">Приватный ключ для дешифрования</param>
     /// <returns></returns>
-    public Result<string> Decrypt(string inputData, string privateKey)
+    public Result<byte[]> Decrypt(string inputData, byte[] privateKey)
     {
         try
         {
             using var rsa = new RSACryptoServiceProvider();
 
-            rsa.ImportRSAPrivateKey(Convert.FromBase64String(privateKey),out _);
+            rsa.ImportRSAPrivateKey(privateKey,out _);
             
-            var bytesData = Encoding.UTF8.GetBytes(inputData);
+            var bytesData = Convert.FromBase64String(inputData);
             
-            return Convert.ToBase64String(rsa.Decrypt(bytesData, false));
+            return rsa.Decrypt(bytesData, false);
         }
         catch (Exception ex)
         {
@@ -73,14 +73,11 @@ public class RsaCryptProvider : IRsaCryptProvider
     /// Генерация ключей RSA
     /// </summary>
     /// <returns>Публичный и приватный ключ</returns>
-    public (string publicKey, string privateKey) GenerateKey()
+    public (byte[] publicKey, byte[] privateKey) GenerateKey()
     {
         using var rsa = new RSACryptoServiceProvider(2048);
 
-        var publicKey = Convert.ToBase64String(rsa.ExportRSAPublicKey());
-        var privateKey = Convert.ToBase64String(rsa.ExportRSAPrivateKey());
-        
-        return (publicKey, privateKey);
+        return (rsa.ExportRSAPublicKey(), rsa.ExportRSAPrivateKey());
     }
 
     /// <summary>
