@@ -84,6 +84,13 @@ public class GetCryptedMessageFromFolderByIdHandler: IQueryHandler<Letter, GetCr
         var decryptedKey = _rsaCryptProvider.Decrypt(keyString, Convert.FromBase64String(privateKey));
         var decryptedIv = _rsaCryptProvider.Decrypt(ivString, Convert.FromBase64String(privateKey));
 
+        var decryptedBody = _desCryptProvider.Decrypt(message.Value.Body!, decryptedKey.Value, decryptedIv.Value);
+
+        if (decryptedBody.IsFailure)
+            return decryptedBody.Errors;
+
+        var body = Convert.ToBase64String(decryptedBody.Value);
+        
         attachments.Value.ForEach(a => a.Content.Close());
         
         _logger.LogInformation("User {email} got message from folder {folder}",

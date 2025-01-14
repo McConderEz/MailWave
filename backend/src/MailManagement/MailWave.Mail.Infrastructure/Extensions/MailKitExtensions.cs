@@ -159,7 +159,7 @@ public static class MailKitExtensions
             {
                 if (attachment is not MimePart part) continue;
         
-                using var stream = new MemoryStream();
+                var stream = new MemoryStream();
                 await part.Content.WriteToAsync(stream, cancellationToken);
                 stream.Position = 0;
         

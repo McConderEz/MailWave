@@ -55,7 +55,7 @@ public class SendCryptOrSignedMessageHandler : ICommandHandler<SendCryptOrSigned
             return Errors.MailErrors.NotFriendError();
 
         var letter = new Letter() { Subject = command.Subject, To = [command.Receiver] };
-        List<Attachment> attachments = [];
+        List<Attachment> attachments = new List<Attachment>();
         
         if (command.IsCrypted)
         {
@@ -135,11 +135,11 @@ public class SendCryptOrSignedMessageHandler : ICommandHandler<SendCryptOrSigned
         byte[] iv)
     {
         var attachments = new List<Attachment>();
-
-        using var memoryStream = new MemoryStream();
         
         foreach (var attachment in command.AttachmentDtos!)
         {
+            using var memoryStream = new MemoryStream();
+            
             await attachment.Content.CopyToAsync(memoryStream);
             
             var data = memoryStream.ToArray();
