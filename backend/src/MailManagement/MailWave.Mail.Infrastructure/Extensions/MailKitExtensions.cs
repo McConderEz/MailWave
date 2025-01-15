@@ -1,4 +1,5 @@
 ﻿using System.Net.Mail;
+using System.Text;
 using MailKit;
 using MailKit.Net.Imap;
 using MailKit.Search;
@@ -152,23 +153,35 @@ public static class MailKitExtensions
             return Error.Failure("get.message.error",$"Cannot get message");
 
         List<Domain.Entities.Attachment> attachments = [];
+
+        if (!message.Attachments.Any()) return attachments;
         
-        if (message.Attachments.Count() != 0)
+        foreach (var attachment in message.Attachments)
         {
-            foreach (var attachment in message.Attachments)
+            if (attachment is not MimePart part) continue;
+            
+            var stream = new MemoryStream();
+            
+            //TODO: разобраться тут
+            //TODO: Грёбанный костыль
+            //Так и живём...
+            if (!attachment.ContentDisposition.FileName.EndsWith(".key") &&
+                !attachment.ContentDisposition.FileName.EndsWith(".iv"))
             {
-                if (attachment is not MimePart part) continue;
-        
-                var stream = new MemoryStream();
+                await part.Content.DecodeToAsync(stream, cancellationToken);
+                stream.Position = 0;
+            }
+            else
+            {
                 await part.Content.WriteToAsync(stream, cancellationToken);
                 stream.Position = 0;
-        
-                attachments.Add(new Domain.Entities.Attachment
-                {
-                    FileName = attachment.ContentDisposition.FileName,
-                    Content = stream
-                });
             }
+
+            attachments.Add(new Domain.Entities.Attachment
+            {
+                FileName = attachment.ContentDisposition.FileName,
+                Content = new MemoryStream(stream.ToArray())
+            });
         }
 
         return attachments;

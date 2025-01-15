@@ -149,8 +149,10 @@ public class GetCryptedMessageFromFolderByIdHandler: IQueryHandler<Letter, GetCr
                 continue;
 
             await attachment.Content.CopyToAsync(memoryStream, cancellationToken);
+
+            var data = memoryStream.ToArray();
             
-            var decryptedData = _desCryptProvider.Decrypt(memoryStream.ToArray(), key, iv);
+            var decryptedData = _desCryptProvider.Decrypt(data, key, iv);
 
             if (decryptedData.IsFailure)
                 return decryptedData.Errors;

@@ -149,7 +149,6 @@ public class MailService : IMailService
             {
                 Content = new MimeContent(attachment.Content),
                 ContentDisposition = new ContentDisposition(ContentDisposition.Attachment),
-                ContentTransferEncoding = ContentEncoding.Base64,
                 FileName = attachment.FileName
             };
                 

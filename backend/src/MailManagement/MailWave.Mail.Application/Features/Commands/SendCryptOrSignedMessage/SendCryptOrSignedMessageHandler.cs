@@ -183,7 +183,7 @@ public class SendCryptOrSignedMessageHandler : ICommandHandler<SendCryptOrSigned
             await attachment.Content.CopyToAsync(memoryStream);
             
             var data = memoryStream.ToArray();
-
+            
             var encryptData = _desCryptProvider.Encrypt(data, key, iv);
             if (encryptData.IsFailure)
                 return encryptData.Errors;
