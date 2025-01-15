@@ -140,20 +140,20 @@ public class MailService : IMailService
     /// <param name="body">Тело письма</param>
     private void AddAttachments(IEnumerable<Attachment>? attachments, BodyBuilder body)
     {
-        if (attachments is not null)
+        if (attachments is null)
+            return;
+        
+        foreach (var attachment in attachments)
         {
-            foreach (var attachment in attachments)
+            var mimePart = new MimePart("application/octet-stream")
             {
-                var mimePart = new MimePart("application/octet-stream")
-                {
-                    Content = new MimeContent(attachment.Content),
-                    ContentDisposition = new ContentDisposition(ContentDisposition.Attachment),
-                    ContentTransferEncoding = ContentEncoding.Base64,
-                    FileName = attachment.FileName
-                };
+                Content = new MimeContent(attachment.Content),
+                ContentDisposition = new ContentDisposition(ContentDisposition.Attachment),
+                ContentTransferEncoding = ContentEncoding.Base64,
+                FileName = attachment.FileName
+            };
                 
-                body.Attachments.Add(mimePart);
-            }
+            body.Attachments.Add(mimePart);
         }
     }
 

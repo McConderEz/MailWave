@@ -118,7 +118,7 @@ public class SendCryptOrSignedMessageHandler : ICommandHandler<SendCryptOrSigned
             if (result.IsFailure)
                 return result.Errors;
                 
-            attachments = result.Value;
+            attachments.AddRange(result.Value);
         }
         
         //Шифруем публичным RSA ключом DES ключ и вектор инициализации и прикрепляем, как вложения

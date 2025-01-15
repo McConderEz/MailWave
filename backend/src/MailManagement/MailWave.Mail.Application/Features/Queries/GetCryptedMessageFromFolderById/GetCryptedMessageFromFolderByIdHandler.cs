@@ -12,6 +12,9 @@ using Microsoft.Extensions.Logging;
 
 namespace MailWave.Mail.Application.Features.Queries.GetCryptedMessageFromFolderById;
 
+/// <summary>
+/// Получение зашифрованного сообщения
+/// </summary>
 public class GetCryptedMessageFromFolderByIdHandler: IQueryHandler<Letter, GetCryptedMessageFromFolderByIdQuery>
 {
     private readonly IValidator<GetCryptedMessageFromFolderByIdQuery> _validator;
@@ -37,6 +40,12 @@ public class GetCryptedMessageFromFolderByIdHandler: IQueryHandler<Letter, GetCr
         _mailService = mailService;
     }
 
+    /// <summary>
+    /// Обработчик
+    /// </summary>
+    /// <param name="query">Запрос с входными параметрами</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns></returns>
     public async Task<Result<Letter>> Handle(
         GetCryptedMessageFromFolderByIdQuery query, CancellationToken cancellationToken = default)
     {
@@ -72,36 +81,126 @@ public class GetCryptedMessageFromFolderByIdHandler: IQueryHandler<Letter, GetCr
 
         if (attachments.IsFailure)
             return attachments.Errors;
-
-        var key = attachments.Value.FirstOrDefault(a => a.FileName.EndsWith(".key"));
-        using var srKey = new StreamReader(key!.Content, Encoding.UTF8);
-        var keyString = await srKey.ReadToEndAsync(cancellationToken);
         
-        var iv = attachments.Value.FirstOrDefault(a => a.FileName.EndsWith(".iv"));
-        using var srIv = new StreamReader(iv!.Content, Encoding.UTF8);
-        var ivString = await srIv.ReadToEndAsync(cancellationToken);
-        
-        var decryptedKey = _rsaCryptProvider.Decrypt(
-            keyString, Convert.FromBase64String(privateKey));
-        
-        var decryptedIv = _rsaCryptProvider.Decrypt(
-            ivString, Convert.FromBase64String(privateKey));
+        var desData = await GetDesData(attachments.Value, privateKey, cancellationToken);
+        if (desData.IsFailure)
+            return desData.Errors;
 
-        var decryptedBody = _desCryptProvider.Decrypt(
-            Convert.FromBase64String(message.Value.Body!),
-            decryptedKey.Value,
-            decryptedIv.Value);
+        if (!string.IsNullOrWhiteSpace(message.Value.Body))
+        {
+            var body =  DecryptBody(desData.Value.key, desData.Value.iv,message.Value);
 
-        if (decryptedBody.IsFailure)
-            return decryptedBody.Errors;
+            if (body.IsFailure)
+                return body.Errors;
 
-        var body = Encoding.UTF8.GetString(decryptedBody.Value);
-        
+            message.Value.Body = body.Value;
+        }
+
+        if (attachments.Value.Count > 2)
+            await DecryptAttachments(attachments.Value, desData.Value.key, desData.Value.iv, cancellationToken);
+
         attachments.Value.ForEach(a => a.Content.Close());
         
         _logger.LogInformation("User {email} got message from folder {folder}",
             query.MailCredentialsDto.Email, query.EmailFolder);
         
         return message;
+    }
+
+    /// <summary>
+    /// Расшифровка тела письма
+    /// </summary>
+    /// <param name="iv">Вектор инициализации</param>
+    /// <param name="message">Письмо</param>
+    /// <param name="key">Ключ</param>
+    /// <returns></returns>
+    private Result<string> DecryptBody(byte[] key, byte[] iv, Letter message)
+    {
+        var decryptedBody = _desCryptProvider.Decrypt(
+            Convert.FromBase64String(message.Body!), key, iv);
+
+        if (decryptedBody.IsFailure)
+            return decryptedBody.Errors;
+        
+        return Encoding.UTF8.GetString(decryptedBody.Value);
+    }
+
+    /// <summary>
+    /// Расшифровка вложений
+    /// </summary>
+    /// <param name="attachments">Вложения</param>
+    /// <param name="key">Ключ</param>
+    /// <param name="iv">Вектор инициализации</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns></returns>
+    private async Task<Result<List<Attachment>>> DecryptAttachments(
+        List<Attachment> attachments,
+        byte[] key,
+        byte[] iv,
+        CancellationToken cancellationToken = default)
+    {
+        List<Attachment> decryptedAttachments =  [];
+
+        foreach (var attachment in attachments)
+        {
+            using var memoryStream = new MemoryStream();
+            
+            if(attachment.FileName.EndsWith(".key") || attachment.FileName.EndsWith(".iv"))
+                continue;
+
+            await attachment.Content.CopyToAsync(memoryStream, cancellationToken);
+            
+            var decryptedData = _desCryptProvider.Decrypt(memoryStream.ToArray(), key, iv);
+
+            if (decryptedData.IsFailure)
+                return decryptedData.Errors;
+            
+            await using var fs = new FileStream(attachment.FileName, FileMode.OpenOrCreate);
+
+            await fs.WriteAsync(decryptedData.Value.ToArray(), cancellationToken);
+            
+            decryptedAttachments.Add(new Attachment
+            {
+                FileName = attachment.FileName,
+                Content = new MemoryStream(decryptedData.Value)
+            });
+        }
+        
+        return decryptedAttachments;
+    }
+
+    /// <summary>
+    /// Получение ключа и вектора инициализации DES
+    /// </summary>
+    /// <param name="attachments">Вложения</param>
+    /// <param name="privateKey">Приватный ключ RSA</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns></returns>
+    private async Task<Result<(byte[] key, byte[] iv)>> GetDesData(
+        List<Attachment> attachments,
+        string privateKey,
+        CancellationToken cancellationToken = default)
+    {
+        var key = attachments.FirstOrDefault(a => a.FileName.EndsWith(".key"));
+        if (key is null)
+            return Error.Null("key.null", "Key is null");
+        
+        var iv = attachments.FirstOrDefault(a => a.FileName.EndsWith(".iv"));
+        if (iv is null)
+            return Error.Null("iv.null", "IV is null");
+        
+        using var srKey = new StreamReader(key.Content, Encoding.UTF8);
+        using var srIv = new StreamReader(iv.Content, Encoding.UTF8);
+        
+        var keyString = await srKey.ReadToEndAsync(cancellationToken);
+        var ivString = await srIv.ReadToEndAsync(cancellationToken);
+
+        var decryptedKey = _rsaCryptProvider.Decrypt(
+            keyString, Convert.FromBase64String(privateKey));
+        
+        var decryptedIv = _rsaCryptProvider.Decrypt(
+            ivString, Convert.FromBase64String(privateKey));
+        
+        return (decryptedKey.Value, decryptedIv.Value);
     }
 }
