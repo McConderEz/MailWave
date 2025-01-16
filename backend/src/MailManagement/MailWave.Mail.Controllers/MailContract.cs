@@ -29,7 +29,7 @@ public class MailContract: IMailContract
         return Result.Success();
     }
 
-    public async Task<Result<string>> GetDecryptedBody(
+    public async Task<Result<LetterDto>> GetDecryptedLetter(
         MailCredentialsDto mailCredentialsDto,
         Constraints.EmailFolder emailFolder,
         uint messageId,
@@ -41,6 +41,14 @@ public class MailContract: IMailContract
         if (result.IsFailure || string.IsNullOrWhiteSpace(result.Value.Body))
             return result.Errors;
 
-        return result.Value.Body;
+        var letterDto = new LetterDto(
+            result.Value.Id,
+            result.Value.Subject,
+            result.Value.Body,
+            result.Value.IsCrypted,
+            result.Value.IsSigned,
+            result.Value.From);
+        
+        return letterDto;
     }
 }

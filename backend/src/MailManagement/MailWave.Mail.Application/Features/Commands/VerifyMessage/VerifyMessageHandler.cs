@@ -3,6 +3,7 @@ using System.Text;
 using FluentValidation;
 using MailWave.Accounts.Contracts;
 using MailWave.Core.Abstractions;
+using MailWave.Core.DTOs;
 using MailWave.Core.Extensions;
 using MailWave.Mail.Application.CryptProviders;
 using MailWave.Mail.Application.MailService;
@@ -15,6 +16,9 @@ using Microsoft.Extensions.Logging;
 
 namespace MailWave.Mail.Application.Features.Commands.VerifyMessage;
 
+/// <summary>
+/// Проверка ЭЦП письма
+/// </summary>
 public class VerifyMessageHandler: ICommandHandler<VerifyMessageCommand, VerifyResponse>
 {
     private readonly IMailContract _mailContract;
@@ -46,6 +50,12 @@ public class VerifyMessageHandler: ICommandHandler<VerifyMessageCommand, VerifyR
         _md5CryptProvider = md5CryptProvider;
     }
 
+    /// <summary>
+    /// Обработчик
+    /// </summary>
+    /// <param name="command">Команда с входными параметрами</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns></returns>
     public async Task<Result<VerifyResponse>> Handle(
         VerifyMessageCommand command, CancellationToken cancellationToken = default)
     {
@@ -53,29 +63,28 @@ public class VerifyMessageHandler: ICommandHandler<VerifyMessageCommand, VerifyR
         if (!validationResult.IsValid)
             return validationResult.ToErrorList();
 
-        var decryptedBody = await _mailContract.GetDecryptedBody(
+        var letter = await _mailContract.GetDecryptedLetter(
             command.MailCredentialsDto, command.EmailFolder, command.MessageId, cancellationToken);
 
-        if (decryptedBody.IsFailure)
-            return decryptedBody.Errors;
+        if (letter.IsFailure)
+            return letter.Errors;
 
         var commonHash = new StringBuilder();
-        
-        var bodyHash = _md5CryptProvider.ComputeHash(Encoding.UTF8.GetBytes(decryptedBody.Value));
-        if (bodyHash.IsFailure)
-            return bodyHash.Errors;
 
-        commonHash.Append(bodyHash.Value);
-        
-        var message = await _mailService.GetMessage(
-            command.MailCredentialsDto,
-            command.EmailFolder,
-            command.MessageId,
-            cancellationToken);
+        if (letter.Value.Body is not null)
+        {
+            var bodyHash = _md5CryptProvider
+                .ComputeHash(Encoding.UTF8.GetBytes(letter.Value.Body));
+            
+            if (bodyHash.IsFailure)
+                return bodyHash.Errors;
+
+            commonHash.Append(bodyHash.Value);
+        }
         
         var (publicKey, privateKey) = await _accountContract.GetCryptData(
             command.MailCredentialsDto.Email,
-            message.Value.From,
+            letter.Value.From,
             cancellationToken);
         
         if (string.IsNullOrWhiteSpace(publicKey) || string.IsNullOrWhiteSpace(privateKey))
@@ -90,28 +99,52 @@ public class VerifyMessageHandler: ICommandHandler<VerifyMessageCommand, VerifyR
         if (attachments.IsFailure)
             return attachments.Errors;
         
-        if (message.Value is { IsCrypted: true })
+        var getAttachmentsResult = await GetAttachmentsHash(
+            attachments.Value, letter.Value, privateKey, commonHash, cancellationToken);
+
+        if (getAttachmentsResult.IsFailure)
+            return getAttachmentsResult.Errors;
+
+        var result = await Verify(attachments, commonHash, publicKey, cancellationToken);
+        
+        return result.IsFailure ? result.Errors : new VerifyResponse(result.Value.ToString());
+    }
+
+    /// <summary>
+    /// Получение хэша вложений
+    /// </summary>
+    /// <param name="attachments">Вложения</param>
+    /// <param name="letter">Письмо</param>
+    /// <param name="privateKey">Приватный RSA ключ</param>
+    /// <param name="commonHash">Общий хэш</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns></returns>
+    private async Task<Result> GetAttachmentsHash(
+        List<Attachment> attachments,
+        LetterDto letter, 
+        string privateKey,
+        StringBuilder commonHash,
+        CancellationToken cancellationToken = default)
+    {
+        if (letter is { IsCrypted: true })
         { 
-            var desData = await GetDesData(attachments.Value, privateKey, cancellationToken);
+            var desData = await GetDesData(attachments, privateKey, cancellationToken);
             if (desData.IsFailure)
                 return desData.Errors;
             
             await GetHashCryptedAttachments(
                 commonHash,
-                attachments.Value,
+                attachments,
                 desData.Value.key,
                 desData.Value.iv,
                 cancellationToken);
         }
         else
         {
-            await GetHashAttachments(commonHash, attachments.Value, cancellationToken);
+            await GetHashAttachments(commonHash, attachments, cancellationToken);
         }
 
-        //TODO: Работаёт херово, отладить вычисление хэшей
-        var result = await Verify(attachments, commonHash, publicKey, cancellationToken);
-
-        return new VerifyResponse(result.Value.ToString());
+        return Result.Success();
     }
 
     /// <summary>
@@ -142,10 +175,7 @@ public class VerifyMessageHandler: ICommandHandler<VerifyMessageCommand, VerifyR
             memoryStream.ToArray(),
             Convert.FromBase64String(publicKey));
 
-        if (result.IsFailure)
-            return result.Errors;
-        
-        return result;
+        return result.IsFailure ? result.Errors : result;
     }
 
     /// <summary>
@@ -161,11 +191,8 @@ public class VerifyMessageHandler: ICommandHandler<VerifyMessageCommand, VerifyR
     {
         try
         {
-            foreach (var attachment in attachments)
+            foreach (var attachment in attachments.Where(attachment => !attachment.FileName.EndsWith(".sign")))
             {
-                if (attachment.FileName.EndsWith(".sign"))
-                    continue;
-                
                 using var memoryStream = new MemoryStream();
                 
                 await attachment.Content.CopyToAsync(memoryStream, cancellationToken);

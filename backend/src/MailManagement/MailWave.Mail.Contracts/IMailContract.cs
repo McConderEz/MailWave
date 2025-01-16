@@ -8,7 +8,7 @@ public interface IMailContract
     public Task<Result> CheckConnection(string userName, string password,
         CancellationToken cancellationToken = default);
 
-    public Task<Result<string>> GetDecryptedBody(
+    public Task<Result<LetterDto>> GetDecryptedLetter(
         MailCredentialsDto mailCredentialsDto,
         Constraints.EmailFolder emailFolder,
         uint messageId,
