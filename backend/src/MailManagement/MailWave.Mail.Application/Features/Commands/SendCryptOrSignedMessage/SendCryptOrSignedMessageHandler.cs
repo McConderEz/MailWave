@@ -8,6 +8,7 @@ using MailWave.Mail.Application.MailService;
 using MailWave.Mail.Domain.Entities;
 using MailWave.SharedKernel.Shared;
 using MailWave.SharedKernel.Shared.Errors;
+using MassTransit;
 using Microsoft.Extensions.Logging;
 
 namespace MailWave.Mail.Application.Features.Commands.SendCryptOrSignedMessage;
@@ -19,6 +20,7 @@ public class SendCryptOrSignedMessageHandler : ICommandHandler<SendCryptOrSigned
     private readonly IMailService _mailService;
     private readonly IDesCryptProvider _desCryptProvider;
     private readonly IRsaCryptProvider _rsaCryptProvider;
+    private readonly IMd5CryptProvider _md5CryptProvider;
     private readonly IAccountContract _accountContract;
 
     public SendCryptOrSignedMessageHandler(
@@ -27,7 +29,8 @@ public class SendCryptOrSignedMessageHandler : ICommandHandler<SendCryptOrSigned
         IMailService mailService,
         IAccountContract accountContract,
         IDesCryptProvider desCryptProvider,
-        IRsaCryptProvider rsaCryptProvider)
+        IRsaCryptProvider rsaCryptProvider, 
+        IMd5CryptProvider md5CryptProvider)
     {
         _logger = logger;
         _validator = validator;
@@ -35,6 +38,7 @@ public class SendCryptOrSignedMessageHandler : ICommandHandler<SendCryptOrSigned
         _accountContract = accountContract;
         _desCryptProvider = desCryptProvider;
         _rsaCryptProvider = rsaCryptProvider;
+        _md5CryptProvider = md5CryptProvider;
     }
 
     //TODO: Отрефакторить
@@ -58,17 +62,20 @@ public class SendCryptOrSignedMessageHandler : ICommandHandler<SendCryptOrSigned
         var letter = new Letter { Subject = command.Subject, To = [command.Receiver] };
         List<Attachment> attachments = [];
         
+        if (command.IsSigned)
+        {
+            var result = await SignMessage(command, letter, privateKey, attachments, cancellationToken);
+
+            if (result.IsFailure)
+                return result.Errors;
+        }
+        
         if (command.IsCrypted)
         {
             var result = await HandleCryptedMessage(command, letter, publicKey, attachments);
             
             if (result.IsFailure)
                 return result.Errors;
-        }
-
-        if (command.IsSigned)
-        {
-            //TODO: Реализовать
         }
 
         var sendingResult = await _mailService.SendMessage(
@@ -78,6 +85,73 @@ public class SendCryptOrSignedMessageHandler : ICommandHandler<SendCryptOrSigned
             cancellationToken);
 
         return sendingResult.IsFailure ? sendingResult.Errors : Result.Success();
+    }
+
+    /// <summary>
+    /// Подпись письма ЭЦП
+    /// </summary>
+    /// <param name="command">Команда с входными параметрами</param>
+    /// <param name="letter">Письмо</param>
+    /// <param name="privateKey">Приватный ключ RSA</param>
+    /// <param name="attachments">Вложения</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns></returns>
+    private async Task<Result> SignMessage(
+        SendCryptOrSignedMessageCommand command,
+        Letter letter,
+        string privateKey,
+        List<Attachment> attachments,
+        CancellationToken cancellationToken = default)
+    {
+        //Установка тега подписи
+        letter.IsSigned = true;
+        letter.Subject += Domain.Constraints.Constraints.SIGNED_SUBJECT;
+        
+        var commonHash = new StringBuilder();
+        
+        //Проверка наличия тела письма и вычисление его хэша MD5 алгоритмом
+        if (!string.IsNullOrWhiteSpace(command.Body))
+        {
+            var bodyHash = _md5CryptProvider.ComputeHash(command.Body);
+            if (bodyHash.IsFailure)
+                return bodyHash.Errors;
+                
+            commonHash.Append(bodyHash.Value);
+        }
+
+        //Проверка наличия вложений и вычисления хэша каждого вложения MD5 алгоритмом
+        if (command.AttachmentDtos!.Any())
+        {
+            foreach (var attachment in command.AttachmentDtos!)
+            {
+                using var memoryStream = new MemoryStream();
+                    
+                await attachment.Content.CopyToAsync(memoryStream, cancellationToken);
+
+                var hash = _md5CryptProvider.ComputeHash(
+                    Encoding.UTF8.GetString(memoryStream.ToArray()));
+
+                if (hash.IsFailure)
+                    return hash.Errors;
+
+                commonHash.Append(hash.Value);
+            }
+        }
+
+        //Создание RSA ЭЦП с помощью приватного ключа на основе общего хэша письма
+        var sign = _rsaCryptProvider.Sign(
+            commonHash.ToString(), Convert.FromBase64String(privateKey));
+        
+        if (sign.IsFailure)
+            return sign.Errors;
+        
+        attachments.Add(new Attachment
+        {
+            FileName = "sign.sign",
+            Content = new MemoryStream(sign.Value)
+        });
+
+        return Result.Success();
     }
 
     /// <summary>

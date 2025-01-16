@@ -32,7 +32,7 @@ public interface IRsaCryptProvider
     /// <param name="hashData">Хэш данных</param>
     /// <param name="privateKey">Приватный ключ для ЭЦП</param>
     /// <returns></returns>
-    Result<string> Sign(string hashData, string privateKey);
+    Result<byte[]> Sign(string hashData, byte[] privateKey);
 
     /// <summary>
     /// Проверка ЭЦП RSA
@@ -41,5 +41,5 @@ public interface IRsaCryptProvider
     /// <param name="signature">Сигнатура</param>
     /// <param name="publicKey">Публичный ключ</param>
     /// <returns></returns>
-    Result<bool> Verify(string inputData, string signature, string publicKey);
+    Result<bool> Verify(string inputData, byte[] signature, byte[] publicKey);
 }

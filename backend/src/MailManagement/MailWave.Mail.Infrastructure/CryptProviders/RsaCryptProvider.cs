@@ -86,18 +86,17 @@ public class RsaCryptProvider : IRsaCryptProvider
     /// <param name="hashData">Хэш данных</param>
     /// <param name="privateKey">Приватный ключ для ЭЦП</param>
     /// <returns></returns>
-    public Result<string> Sign(string hashData, string privateKey)
+    public Result<byte[]> Sign(string hashData, byte[] privateKey)
     {
         try
         {
             using var rsa = new RSACryptoServiceProvider(2048);
 
-            rsa.ImportRSAPrivateKey(Encoding.UTF8.GetBytes(privateKey), out _);
+            rsa.ImportRSAPrivateKey(privateKey, out _);
 
             var bytesData = Encoding.UTF8.GetBytes(hashData);
 
-            return Convert.ToBase64String(
-                rsa.SignData(bytesData, HashAlgorithmName.MD5, RSASignaturePadding.Pkcs1));
+            return rsa.SignData(bytesData, HashAlgorithmName.MD5, RSASignaturePadding.Pkcs1);
         }
         catch (Exception ex)
         {
@@ -113,17 +112,17 @@ public class RsaCryptProvider : IRsaCryptProvider
     /// <param name="signature">Сигнатура</param>
     /// <param name="publicKey">Публичный ключ</param>
     /// <returns></returns>
-    public Result<bool> Verify(string inputData, string signature, string publicKey)
+    public Result<bool> Verify(string inputData, byte[] signature, byte[] publicKey)
     {
         try
         {
             using var rsa = new RSACryptoServiceProvider();
 
-            rsa.ImportRSAPublicKey(Encoding.UTF8.GetBytes(publicKey), out _);
+            rsa.ImportRSAPublicKey(publicKey, out _);
 
             return rsa.VerifyData(
                 Encoding.UTF8.GetBytes(inputData),
-                Encoding.UTF8.GetBytes(signature),
+                signature,
                 HashAlgorithmName.MD5, RSASignaturePadding.Pkcs1);
         }
         catch (Exception ex)
