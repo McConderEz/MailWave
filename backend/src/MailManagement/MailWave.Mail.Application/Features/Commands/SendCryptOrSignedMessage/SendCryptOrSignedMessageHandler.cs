@@ -137,13 +137,16 @@ public class SendCryptOrSignedMessageHandler : ICommandHandler<SendCryptOrSigned
                     return hash.Errors;
 
                 commonHash.Append(hash.Value);
+
+                if (command.IsCrypted)
+                    continue;
                 
                 attachments.Add(new Attachment
                 {
                     FileName = attachment.FileName,
                     Content = new MemoryStream(memoryStream.ToArray())
                 });
-            
+
                 letter.AttachmentNames.Add(attachment.FileName);
             }
         }
