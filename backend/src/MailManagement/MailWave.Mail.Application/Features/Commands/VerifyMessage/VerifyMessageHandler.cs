@@ -61,7 +61,7 @@ public class VerifyMessageHandler: ICommandHandler<VerifyMessageCommand, VerifyR
 
         var commonHash = new StringBuilder();
         
-        var bodyHash = _md5CryptProvider.ComputeHash(decryptedBody.Value);
+        var bodyHash = _md5CryptProvider.ComputeHash(Encoding.UTF8.GetBytes(decryptedBody.Value));
         if (bodyHash.IsFailure)
             return bodyHash.Errors;
 
@@ -90,12 +90,12 @@ public class VerifyMessageHandler: ICommandHandler<VerifyMessageCommand, VerifyR
         if (attachments.IsFailure)
             return attachments.Errors;
         
-        var desData = await GetDesData(attachments.Value, privateKey, cancellationToken);
-        if (desData.IsFailure)
-            return desData.Errors;
-        
         if (message.Value is { IsCrypted: true })
         { 
+            var desData = await GetDesData(attachments.Value, privateKey, cancellationToken);
+            if (desData.IsFailure)
+                return desData.Errors;
+            
             await GetHashCryptedAttachments(
                 commonHash,
                 attachments.Value,
@@ -172,7 +172,7 @@ public class VerifyMessageHandler: ICommandHandler<VerifyMessageCommand, VerifyR
 
                 var data = memoryStream.ToArray();
                 
-                commonHash.Append(_md5CryptProvider.ComputeHash(Encoding.UTF8.GetString(data)));
+                commonHash.Append(_md5CryptProvider.ComputeHash(data).Value);
             }
         }
         catch (Exception ex)
@@ -216,7 +216,7 @@ public class VerifyMessageHandler: ICommandHandler<VerifyMessageCommand, VerifyR
 
                 if (decryptedData.IsFailure) return;
 
-                var result = _md5CryptProvider.ComputeHash(Encoding.UTF8.GetString(decryptedData.Value));
+                var result = _md5CryptProvider.ComputeHash(decryptedData.Value);
                 if (result.IsFailure)
                     return;
                 

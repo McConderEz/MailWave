@@ -9,5 +9,5 @@ public interface IMd5CryptProvider
     /// </summary>
     /// <param name="inputData">Входные данные</param>
     /// <returns></returns>
-    Result<string> ComputeHash(string inputData);
+    Result<string> ComputeHash(byte[] inputData);
 }

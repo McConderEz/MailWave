@@ -15,11 +15,10 @@ public class Md5CryptProvider : IMd5CryptProvider
     /// </summary>
     /// <param name="inputData">Входные данные</param>
     /// <returns></returns>
-    public Result<string> ComputeHash(string inputData)
+    public Result<string> ComputeHash(byte[] inputData)
     {
         using var md5 = MD5.Create();
-        var inputBytes = Encoding.UTF8.GetBytes(inputData);
-        var hashBytes = md5.ComputeHash(inputBytes);
+        var hashBytes = md5.ComputeHash(inputData);
 
         StringBuilder sb = new StringBuilder();
         foreach (byte b in hashBytes)

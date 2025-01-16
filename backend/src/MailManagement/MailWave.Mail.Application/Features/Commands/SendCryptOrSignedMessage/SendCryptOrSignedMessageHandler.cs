@@ -105,13 +105,14 @@ public class SendCryptOrSignedMessageHandler : ICommandHandler<SendCryptOrSigned
         //Установка тега подписи
         letter.IsSigned = true;
         letter.Subject += Domain.Constraints.Constraints.SIGNED_SUBJECT;
+        letter.Body = command.Body;
         
         var commonHash = new StringBuilder();
         
         //Проверка наличия тела письма и вычисление его хэша MD5 алгоритмом
         if (!string.IsNullOrWhiteSpace(command.Body))
         {
-            var bodyHash = _md5CryptProvider.ComputeHash(command.Body);
+            var bodyHash = _md5CryptProvider.ComputeHash(Encoding.UTF8.GetBytes(command.Body));
             if (bodyHash.IsFailure)
                 return bodyHash.Errors;
                 
@@ -130,12 +131,20 @@ public class SendCryptOrSignedMessageHandler : ICommandHandler<SendCryptOrSigned
                 attachment.Content.Position = 0;
                 
                 var hash = _md5CryptProvider.ComputeHash(
-                    Encoding.UTF8.GetString(memoryStream.ToArray()));
+                    memoryStream.ToArray());
 
                 if (hash.IsFailure)
                     return hash.Errors;
 
                 commonHash.Append(hash.Value);
+                
+                attachments.Add(new Attachment
+                {
+                    FileName = attachment.FileName,
+                    Content = new MemoryStream(memoryStream.ToArray())
+                });
+            
+                letter.AttachmentNames.Add(attachment.FileName);
             }
         }
 

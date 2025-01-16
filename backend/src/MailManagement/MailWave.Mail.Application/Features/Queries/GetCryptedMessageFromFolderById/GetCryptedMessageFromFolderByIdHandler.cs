@@ -59,15 +59,15 @@ public class GetCryptedMessageFromFolderByIdHandler: IQueryHandler<Letter, GetCr
             query.MessageId,
             cancellationToken);
 
-        if (message.Value is { IsCrypted: false, IsSigned: false})
-            return Error.Failure("message.not.crypted/signed", "Message is not crypted/signed");
+        if (message.Value is { IsCrypted: false})
+            return message;
         
         var (publicKey, privateKey) = await _accountContract.GetCryptData(
             query.MailCredentialsDto.Email,
             message.Value.From,
             cancellationToken);
         
-        if (publicKey == String.Empty || privateKey == String.Empty)
+        if (string.IsNullOrWhiteSpace(publicKey) || string.IsNullOrWhiteSpace(privateKey))
             return Errors.MailErrors.NotFriendError();
         
         if (message.IsFailure)
