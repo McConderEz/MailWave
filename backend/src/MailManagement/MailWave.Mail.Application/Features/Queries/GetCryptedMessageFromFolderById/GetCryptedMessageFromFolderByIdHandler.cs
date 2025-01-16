@@ -59,8 +59,8 @@ public class GetCryptedMessageFromFolderByIdHandler: IQueryHandler<Letter, GetCr
             query.MessageId,
             cancellationToken);
 
-        if (message.Value is { IsCrypted: false})
-            return Error.Failure("message.not.crypted", "Message is not crypted");
+        if (message.Value is { IsCrypted: false, IsSigned: false})
+            return Error.Failure("message.not.crypted/signed", "Message is not crypted/signed");
         
         var (publicKey, privateKey) = await _accountContract.GetCryptData(
             query.MailCredentialsDto.Email,
@@ -86,7 +86,7 @@ public class GetCryptedMessageFromFolderByIdHandler: IQueryHandler<Letter, GetCr
         if (desData.IsFailure)
             return desData.Errors;
 
-        if (!string.IsNullOrWhiteSpace(message.Value.Body))
+        if (!string.IsNullOrWhiteSpace(message.Value.Body) && message.Value.IsCrypted)
         {
             var body =  DecryptBody(desData.Value.key, desData.Value.iv,message.Value);
 

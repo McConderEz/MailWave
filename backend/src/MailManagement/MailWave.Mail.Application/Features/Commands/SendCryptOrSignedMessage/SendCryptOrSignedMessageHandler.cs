@@ -8,7 +8,6 @@ using MailWave.Mail.Application.MailService;
 using MailWave.Mail.Domain.Entities;
 using MailWave.SharedKernel.Shared;
 using MailWave.SharedKernel.Shared.Errors;
-using MassTransit;
 using Microsoft.Extensions.Logging;
 
 namespace MailWave.Mail.Application.Features.Commands.SendCryptOrSignedMessage;
@@ -56,7 +55,7 @@ public class SendCryptOrSignedMessageHandler : ICommandHandler<SendCryptOrSigned
             command.Receiver,
             cancellationToken);
         
-        if (publicKey == String.Empty || privateKey == String.Empty)
+        if (string.IsNullOrWhiteSpace(publicKey) || string.IsNullOrWhiteSpace(privateKey))
             return Errors.MailErrors.NotFriendError();
 
         var letter = new Letter { Subject = command.Subject, To = [command.Receiver] };
@@ -128,6 +127,8 @@ public class SendCryptOrSignedMessageHandler : ICommandHandler<SendCryptOrSigned
                     
                 await attachment.Content.CopyToAsync(memoryStream, cancellationToken);
 
+                attachment.Content.Position = 0;
+                
                 var hash = _md5CryptProvider.ComputeHash(
                     Encoding.UTF8.GetString(memoryStream.ToArray()));
 

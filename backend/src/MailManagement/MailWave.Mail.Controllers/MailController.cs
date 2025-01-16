@@ -12,6 +12,7 @@ using MailWave.Mail.Application.Features.Commands.SaveMessagesInDatabase;
 using MailWave.Mail.Application.Features.Commands.SendCryptOrSignedMessage;
 using MailWave.Mail.Application.Features.Commands.SendMessage;
 using MailWave.Mail.Application.Features.Commands.SendScheduledMessage;
+using MailWave.Mail.Application.Features.Commands.VerifyMessage;
 using MailWave.Mail.Application.Features.Queries.GetCryptedMessageFromFolderById;
 using MailWave.Mail.Application.Features.Queries.GetMessageFromFolderById;
 using MailWave.Mail.Application.Features.Queries.GetMessagesFromFolderWithPagination;
@@ -105,6 +106,26 @@ public class MailController: ApplicationController
             request.Body,
             request.Receivers,
             attachmentDtos);
+
+        var result = await handler.Handle(command, cancellationToken);
+
+        if (result.IsFailure)
+            result.Errors.ToResponse();
+
+        return Ok(result);
+    }
+    
+    [HttpPost("verification-message")]
+    public async Task<IActionResult> VerifyMessage(
+        [FromForm] VerifyMessageRequest request,
+        [FromServices] MailCredentialsScopedData mailCredentials,
+        [FromServices] VerifyMessageHandler handler,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new VerifyMessageCommand(
+            new MailCredentialsDto(mailCredentials.Email, mailCredentials.Password),
+            request.EmailFolder,
+            request.MessageId);
 
         var result = await handler.Handle(command, cancellationToken);
 

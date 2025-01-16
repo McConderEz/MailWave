@@ -166,7 +166,8 @@ public static class MailKitExtensions
             //TODO: Грёбаный костыль
             //Так и живём...
             if (!attachment.ContentDisposition.FileName.EndsWith(".key") &&
-                !attachment.ContentDisposition.FileName.EndsWith(".iv"))
+                !attachment.ContentDisposition.FileName.EndsWith(".iv") && 
+                !attachment.ContentDisposition.FileName.EndsWith(".sign"))
             {
                 await part.Content.DecodeToAsync(stream, cancellationToken);
                 stream.Position = 0;
