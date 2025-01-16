@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Security;
+using System.Text;
 using FluentValidation;
 using MailWave.Accounts.Contracts;
 using MailWave.Core.Abstractions;
@@ -106,8 +107,45 @@ public class VerifyMessageHandler: ICommandHandler<VerifyMessageCommand, VerifyR
         {
             await GetHashAttachments(commonHash, attachments.Value, cancellationToken);
         }
+
+        //TODO: Работаёт херово, отладить вычисление хэшей
+        var result = await Verify(attachments, commonHash, publicKey, cancellationToken);
+
+        return new VerifyResponse(result.Value.ToString());
+    }
+
+    /// <summary>
+    /// Проверка ЭЦП общего хэша
+    /// </summary>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <param name="attachments">Вложения</param>
+    /// <param name="commonHash">Общий хэш</param>
+    /// <param name="publicKey">Публичный ключ RSA</param>
+    /// <returns></returns>
+    private async Task<Result<bool>> Verify(
+        Result<List<Attachment>> attachments,
+        StringBuilder commonHash,
+        string publicKey,
+        CancellationToken cancellationToken = default)
+    {
+        var sign = attachments.Value.FirstOrDefault(a => a.FileName.EndsWith(".sign"));
+
+        if (sign is null)
+            return Error.NotFound("sign.not.found", "sign not found");
+
+        using var memoryStream = new MemoryStream();
+
+        await sign.Content.CopyToAsync(memoryStream, cancellationToken);
+
+        var result = _rsaCryptProvider.Verify(
+            commonHash.ToString(),
+            memoryStream.ToArray(),
+            Convert.FromBase64String(publicKey));
+
+        if (result.IsFailure)
+            return result.Errors;
         
-        return new VerifyResponse("Нет");
+        return result;
     }
 
     /// <summary>
