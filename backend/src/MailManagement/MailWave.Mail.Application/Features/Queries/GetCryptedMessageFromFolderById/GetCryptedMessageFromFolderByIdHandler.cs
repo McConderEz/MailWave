@@ -59,8 +59,8 @@ public class GetCryptedMessageFromFolderByIdHandler: IQueryHandler<Letter, GetCr
             query.MessageId,
             cancellationToken);
 
-        if (message.Value is { IsCrypted: false, IsSigned: false })
-            return Error.Failure("message.not.crypted.signed", "Message is not crypted/signed");
+        if (message.Value is { IsCrypted: false})
+            return Error.Failure("message.not.crypted", "Message is not crypted");
         
         var (publicKey, privateKey) = await _accountContract.GetCryptData(
             query.MailCredentialsDto.Email,
@@ -95,11 +95,6 @@ public class GetCryptedMessageFromFolderByIdHandler: IQueryHandler<Letter, GetCr
 
             message.Value.Body = body.Value;
         }
-
-        if (attachments.Value.Count > 2)
-            await DecryptAttachments(attachments.Value, desData.Value.key, desData.Value.iv, cancellationToken);
-
-        attachments.Value.ForEach(a => a.Content.Close());
         
         _logger.LogInformation("User {email} got message from folder {folder}",
             query.MailCredentialsDto.Email, query.EmailFolder);
@@ -123,52 +118,6 @@ public class GetCryptedMessageFromFolderByIdHandler: IQueryHandler<Letter, GetCr
             return decryptedBody.Errors;
         
         return Encoding.UTF8.GetString(decryptedBody.Value);
-    }
-
-    /// <summary>
-    /// Расшифровка вложений
-    /// </summary>
-    /// <param name="attachments">Вложения</param>
-    /// <param name="key">Ключ</param>
-    /// <param name="iv">Вектор инициализации</param>
-    /// <param name="cancellationToken">Токен отмены</param>
-    /// <returns></returns>
-    private async Task<Result<List<Attachment>>> DecryptAttachments(
-        List<Attachment> attachments,
-        byte[] key,
-        byte[] iv,
-        CancellationToken cancellationToken = default)
-    {
-        List<Attachment> decryptedAttachments =  [];
-
-        foreach (var attachment in attachments)
-        {
-            using var memoryStream = new MemoryStream();
-            
-            if(attachment.FileName.EndsWith(".key") || attachment.FileName.EndsWith(".iv"))
-                continue;
-
-            await attachment.Content.CopyToAsync(memoryStream, cancellationToken);
-
-            var data = memoryStream.ToArray();
-            
-            var decryptedData = _desCryptProvider.Decrypt(data, key, iv);
-
-            if (decryptedData.IsFailure)
-                return decryptedData.Errors;
-            
-            await using var fs = new FileStream(attachment.FileName, FileMode.OpenOrCreate);
-
-            await fs.WriteAsync(decryptedData.Value.ToArray(), cancellationToken);
-            
-            decryptedAttachments.Add(new Attachment
-            {
-                FileName = attachment.FileName,
-                Content = new MemoryStream(decryptedData.Value)
-            });
-        }
-        
-        return decryptedAttachments;
     }
 
     /// <summary>

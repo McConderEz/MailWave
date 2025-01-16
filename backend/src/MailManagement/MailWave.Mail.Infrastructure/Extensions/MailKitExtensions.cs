@@ -163,7 +163,7 @@ public static class MailKitExtensions
             var stream = new MemoryStream();
             
             //TODO: разобраться тут
-            //TODO: Грёбанный костыль
+            //TODO: Грёбаный костыль
             //Так и живём...
             if (!attachment.ContentDisposition.FileName.EndsWith(".key") &&
                 !attachment.ContentDisposition.FileName.EndsWith(".iv"))

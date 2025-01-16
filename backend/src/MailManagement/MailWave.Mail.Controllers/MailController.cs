@@ -7,6 +7,7 @@ using MailWave.Mail.Application.Features.Commands.AddFriend;
 using MailWave.Mail.Application.Features.Commands.DeleteFriend;
 using MailWave.Mail.Application.Features.Commands.DeleteMessage;
 using MailWave.Mail.Application.Features.Commands.MoveMessage;
+using MailWave.Mail.Application.Features.Commands.SaveFiles;
 using MailWave.Mail.Application.Features.Commands.SaveMessagesInDatabase;
 using MailWave.Mail.Application.Features.Commands.SendCryptOrSignedMessage;
 using MailWave.Mail.Application.Features.Commands.SendMessage;
@@ -104,6 +105,27 @@ public class MailController: ApplicationController
             request.Body,
             request.Receivers,
             attachmentDtos);
+
+        var result = await handler.Handle(command, cancellationToken);
+
+        if (result.IsFailure)
+            result.Errors.ToResponse();
+
+        return Ok(result);
+    }
+    
+    [HttpPost("saving-files")]
+    public async Task<IActionResult> SaveFiles(
+        [FromForm] SaveFilesRequest request,
+        [FromServices] MailCredentialsScopedData mailCredentials,
+        [FromServices] SaveFilesHandler handler,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new SaveFilesCommand(
+            new MailCredentialsDto(mailCredentials.Email, mailCredentials.Password),
+            request.SelectedFolder,
+            request.DirectoryPath,
+            request.MessageId);
 
         var result = await handler.Handle(command, cancellationToken);
 
