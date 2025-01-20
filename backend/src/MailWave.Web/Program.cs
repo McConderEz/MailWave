@@ -21,7 +21,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors(config =>
 {
-    config.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+    config
+        .WithOrigins("http://localhost:5173")
+        .AllowAnyMethod()
+        .AllowAnyHeader()
+        .AllowCredentials();
 });
 
 app.UseHangfireServer();

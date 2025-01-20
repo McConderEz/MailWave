@@ -7,7 +7,7 @@ namespace MailWave.Accounts.Controllers;
 
 public class AccountController : ApplicationController
 {
-    [HttpPost("authentication")]
+    [HttpPost("authentification")]
     public async Task<IActionResult> Login(
         [FromBody] LoginUserRequest request, 
         [FromServices] LoginUserHandler handler,
@@ -18,6 +18,8 @@ public class AccountController : ApplicationController
         var result = await handler.Handle(command, cancellationToken);
         if (result.IsFailure)
             return result.Errors.ToResponse();
+        
+        HttpContext.Response.Cookies.Append("refreshToken", result.Value.RefreshToken.ToString());
         
         return Ok(result.Value);
     }

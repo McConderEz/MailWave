@@ -55,7 +55,8 @@ public class LoginUserHandler: ICommandHandler<LoginUserCommand, LoginResponse>
     /// <param name="command">Команда с входными параметрами</param>
     /// <param name="cancellationToken">Токен отмены</param>
     /// <returns>Возвращает результат в виде ответа с токеном доступа и токеном обновления</returns>
-    public async Task<Result<LoginResponse>> Handle(LoginUserCommand command, CancellationToken cancellationToken = default)
+    public async Task<Result<LoginResponse>> Handle(
+        LoginUserCommand command, CancellationToken cancellationToken = default)
     {
         var validatorResult = await _validator.ValidateAsync(command, cancellationToken);
         if (!validatorResult.IsValid)
