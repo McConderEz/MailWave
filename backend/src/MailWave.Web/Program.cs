@@ -19,6 +19,11 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseCors(config =>
+{
+    config.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+});
+
 app.UseHangfireServer();
 app.UseHangfireDashboard();
 
