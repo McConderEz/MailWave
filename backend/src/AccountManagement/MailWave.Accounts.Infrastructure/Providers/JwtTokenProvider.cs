@@ -7,7 +7,9 @@ using MailWave.Accounts.Application.Providers;
 using MailWave.Accounts.Domain.Models;
 using MailWave.Core.Models;
 using MailWave.Core.Options;
+using MailWave.Framework;
 using MailWave.SharedKernel.Shared;
+using MailWave.SharedKernel.Shared.Errors;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
@@ -15,6 +17,9 @@ namespace MailWave.Accounts.Infrastructure.Providers;
 
 public class JwtTokenProvider: ITokenProvider
 {
+    //TODO: потом пофиксить options, но сейчас нет времени
+    public const int EXPIRED_DAYS_TIME = 30;
+    
     private readonly RefreshSessionOptions _refreshSessionOptions;
     private readonly JwtOptions _jwtOptions;
     private readonly IDateTimeProvider _dateTimeProvider;
@@ -68,16 +73,31 @@ public class JwtTokenProvider: ITokenProvider
         var refreshSession = new RefreshSession()
         {
             Id = Guid.NewGuid().ToString(),
+            UserId = user.Id,
             User = user,
             CreatedAt = _dateTimeProvider.UtcNow,
             Jti = accessTokenJti.ToString(),
-            ExpiresIn = _dateTimeProvider.UtcNow.AddDays(_refreshSessionOptions.ExpiredDaysTime),
+            ExpiresIn = _dateTimeProvider.UtcNow.AddDays(30),
             RefreshToken = Guid.NewGuid().ToString()
         };
 
         await _refreshSessionManager.Add(refreshSession, cancellationToken);
-        //await _accountsDbContext.SaveChangesAsync(cancellationToken);
 
         return Guid.Parse(refreshSession.RefreshToken);
+    }
+    
+    public async Task<Result<IReadOnlyList<Claim>>> GetUserClaimsFromJwtToken(
+        string jwtToken,
+        CancellationToken cancellationToken = default)
+    {
+        var jwtHandler = new JwtSecurityTokenHandler();
+
+        var validationParameters = TokenValidationParametersFactory.CreateWithoutLifeTime(_jwtOptions);
+
+        var validationResult = await jwtHandler.ValidateTokenAsync(jwtToken, validationParameters);
+        if (!validationResult.IsValid)
+            return Errors.Tokens.InvalidToken();
+
+        return validationResult.ClaimsIdentity.Claims.ToList();
     }
 }

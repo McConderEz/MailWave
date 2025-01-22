@@ -81,7 +81,7 @@ public static class DependencyInjection
             configuration.GetSection(JwtOptions.JWT) ?? throw new ApplicationException());
         
         services.Configure<RefreshSessionOptions>(
-            configuration.GetSection(RefreshSessionOptions.REFRESH_SESSION) ?? throw new ApplicationException());
+            configuration.GetSection(RefreshSessionOptions.REFRESH_SESSION));
 
         services
             .AddAuthentication(options =>

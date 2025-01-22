@@ -32,10 +32,13 @@ public class RefreshSessionManager: IRefreshSessionManager
         return Result.Success();
     }
 
-    public async Task<Result<RefreshSession>> GetByRefreshToken(Guid refreshToken, CancellationToken cancellationToken = default)
+    public async Task<Result<RefreshSession>> GetByRefreshToken(
+        Guid refreshToken, CancellationToken cancellationToken = default)
     {
+        var refreshTokenString = refreshToken.ToString();
+        
         var refreshSessionToken =
-            await _refreshSessionCollection.Find(r => Guid.Parse(r.RefreshToken) == refreshToken)
+            await _refreshSessionCollection.Find(r => r.RefreshToken == refreshTokenString)
                 .ToListAsync(cancellationToken);
 
         if (refreshSessionToken.Count != 1)
