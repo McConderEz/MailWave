@@ -2,4 +2,4 @@
 
 namespace MailWave.Accounts.Application.Features.Commands.Refresh;
 
-public record RefreshTokenCommand(string AccessToken, Guid RefreshToken) : ICommand;
+public record RefreshTokenCommand(Guid RefreshToken) : ICommand;

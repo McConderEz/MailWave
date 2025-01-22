@@ -44,25 +44,6 @@ public class RefreshTokenHandler: ICommandHandler<RefreshTokenCommand, LoginResp
 
         if (refreshSession.Value.ExpiresIn < _dateTimeProvider.UtcNow)
             return Errors.Tokens.ExpiredToken();
-
-        var userClaims = await _tokenProvider
-            .GetUserClaimsFromJwtToken(command.AccessToken, cancellationToken);
-        if (userClaims.IsFailure)
-            return userClaims.Errors;
-
-        var userIdString = userClaims.Value.FirstOrDefault(c => c.Type == CustomClaims.Id)?.Value;
-        if (!Guid.TryParse(userIdString, out var userId))
-            return Errors.General.Null();
-        
-        if (refreshSession.Value.UserId != userId.ToString())
-            return Errors.Tokens.InvalidToken();
-
-        var userJtiString = userClaims.Value.FirstOrDefault(c => c.Type == CustomClaims.Jti)?.Value;
-        if (!Guid.TryParse(userJtiString, out var userJti))
-            return Errors.General.Null();
-        
-        if (refreshSession.Value.Jti != userJti.ToString())
-            return Errors.Tokens.InvalidToken();
         
         await _refreshSessionManager.Delete(refreshSession.Value, cancellationToken);
         

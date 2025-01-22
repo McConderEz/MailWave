@@ -27,11 +27,15 @@ public class AccountController : ApplicationController
     
     [HttpPost("refreshing")]
     public async Task<IActionResult> Refresh(
-        [FromBody] RefreshTokenRequest request,
         [FromServices] RefreshTokenHandler handler,
         CancellationToken cancellationToken = default)
     {
-        var command = new RefreshTokenCommand(request.AccessToken, request.RefreshToken);
+        if (!HttpContext.Request.Cookies.TryGetValue("refreshToken", out var refreshToken))
+        {
+            return Unauthorized();
+        }
+        
+        var command = new RefreshTokenCommand(Guid.Parse(refreshToken));
 
         var result = await handler.Handle(command, cancellationToken);
         if (result.IsFailure)
