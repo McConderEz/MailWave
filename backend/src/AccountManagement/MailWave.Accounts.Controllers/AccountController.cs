@@ -1,4 +1,5 @@
-﻿using MailWave.Accounts.Application.Features.Commands.Login;
+﻿using MailWave.Accounts.Application.Features.Commands.DeleteRefreshSession;
+using MailWave.Accounts.Application.Features.Commands.Login;
 using MailWave.Accounts.Application.Features.Commands.Refresh;
 using MailWave.Accounts.Contracts.Requests;
 using MailWave.Framework;
@@ -23,6 +24,27 @@ public class AccountController : ApplicationController
         HttpContext.Response.Cookies.Append("refreshToken", result.Value.RefreshToken.ToString());
         
         return Ok(result.Value);
+    }
+    
+    [HttpPost("deletion")]
+    public async Task<IActionResult> Delete(
+        [FromServices] DeleteRefreshTokenHandler handler,
+        CancellationToken cancellationToken = default)
+    {
+        if (!HttpContext.Request.Cookies.TryGetValue("refreshToken", out var refreshToken))
+        {
+            return Unauthorized();
+        }
+        
+        var command = new DeleteRefreshTokenCommand(Guid.Parse(refreshToken));
+
+        HttpContext.Response.Cookies.Delete("refreshToken");
+        
+        var result = await handler.Handle(command, cancellationToken);
+        if (result.IsFailure)
+            return result.Errors.ToResponse();
+
+        return Ok(result);
     }
     
     [HttpPost("refreshing")]

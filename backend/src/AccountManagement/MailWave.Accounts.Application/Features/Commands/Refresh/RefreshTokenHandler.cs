@@ -7,12 +7,14 @@ using MailWave.Core.Extensions;
 using MailWave.Core.Models;
 using MailWave.SharedKernel.Shared;
 using MailWave.SharedKernel.Shared.Errors;
+using Microsoft.Extensions.Logging;
 
 namespace MailWave.Accounts.Application.Features.Commands.Refresh;
 
 public class RefreshTokenHandler: ICommandHandler<RefreshTokenCommand, LoginResponse>
 {
     private readonly IRefreshSessionManager _refreshSessionManager;
+    private readonly ILogger<RefreshTokenHandler> _logger;
     private readonly ITokenProvider _tokenProvider;
     private readonly IValidator<RefreshTokenCommand> _validator;
     private readonly IDateTimeProvider _dateTimeProvider;
@@ -21,12 +23,14 @@ public class RefreshTokenHandler: ICommandHandler<RefreshTokenCommand, LoginResp
         IRefreshSessionManager refreshSessionManager,
         IValidator<RefreshTokenCommand> validator,
         IDateTimeProvider dateTimeProvider,
-        ITokenProvider tokenProvider)
+        ITokenProvider tokenProvider,
+        ILogger<RefreshTokenHandler> logger)
     {
         _refreshSessionManager = refreshSessionManager;
         _validator = validator;
         _dateTimeProvider = dateTimeProvider;
         _tokenProvider = tokenProvider;
+        _logger = logger;
     }
     
     public async Task<Result<LoginResponse>> Handle(
@@ -52,6 +56,8 @@ public class RefreshTokenHandler: ICommandHandler<RefreshTokenCommand, LoginResp
         var refreshToken = await _tokenProvider
             .GenerateRefreshToken(refreshSession.Value.User,accessToken.Jti, cancellationToken);
 
+        _logger.LogInformation("Access token has been refreshed");
+        
         return new LoginResponse(accessToken.AccessToken, refreshToken);
     }
 }
