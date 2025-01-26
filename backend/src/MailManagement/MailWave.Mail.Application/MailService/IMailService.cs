@@ -124,4 +124,16 @@ public interface IMailService
         EmailFolder selectedFolder,
         uint messageId,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Получение общего количества писем из папки
+    /// </summary>
+    /// <param name="mailCredentialsDto">Данные учётной записи пользователя</param>
+    /// <param name="selectedFolder">Выбранная папка</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns></returns>
+    Task<Result<int>> GetMessagesCountFromFolder(
+        MailCredentialsDto mailCredentialsDto,
+        EmailFolder selectedFolder,
+        CancellationToken cancellationToken = default);
 }

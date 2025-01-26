@@ -15,6 +15,7 @@ using MailWave.Mail.Application.Features.Commands.SendScheduledMessage;
 using MailWave.Mail.Application.Features.Commands.VerifyMessage;
 using MailWave.Mail.Application.Features.Queries.GetCryptedMessageFromFolderById;
 using MailWave.Mail.Application.Features.Queries.GetMessageFromFolderById;
+using MailWave.Mail.Application.Features.Queries.GetMessagesCountFromFolder;
 using MailWave.Mail.Application.Features.Queries.GetMessagesFromFolderWithPagination;
 using MailWave.Mail.Contracts.Requests;
 using MailWave.SharedKernel.Shared;
@@ -45,7 +46,25 @@ public class MailController: ApplicationController
         if (result.IsFailure)
             result.Errors.ToResponse();
 
-        return Ok(result);
+        return Ok(result.Value);
+    }
+    
+    [HttpGet("messages-count")]
+    public async Task<IActionResult> GetMessagesCountFromFolder(
+        [FromQuery] GetMessagesCountFromFolderRequest request,
+        [FromServices] MailCredentialsScopedData mailCredentials,
+        [FromServices] GetMessagesCountFromFolderHandler handler,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetMessagesCountFromFolderQuery(
+            new MailCredentialsDto(mailCredentials.Email, mailCredentials.Password), request.SelectedFolder);
+
+        var result = await handler.Handle(query, cancellationToken);
+
+        if (result.IsFailure)
+            result.Errors.ToResponse();
+
+        return Ok(result.Value);
     }
     
     [HttpGet("{messageId:int}/message-from-folder-by-id")]

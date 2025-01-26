@@ -346,7 +346,47 @@ public class MailService : IMailService
             return Error.Failure("message.receive.error","Cannot get message");
         }
     }
-    
+
+    /// <summary>
+    /// Получение общего количества писем из папки
+    /// </summary>
+    /// <param name="mailCredentialsDto">Данные учётной записи пользователя</param>
+    /// <param name="selectedFolder">Выбранная папка</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns></returns>
+    public async Task<Result<int>> GetMessagesCountFromFolder(
+        MailCredentialsDto mailCredentialsDto,
+        EmailFolder selectedFolder,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var client = await _dispatcher.GetImapClientAsync(
+                mailCredentialsDto.Email, mailCredentialsDto.Password, cancellationToken);
+
+            var folder = await SelectFolder(selectedFolder, mailCredentialsDto.Email, client, cancellationToken);
+            
+            await folder.OpenAsync(FolderAccess.ReadWrite, cancellationToken);
+            
+            var totalMessagesCount = await folder.GetMessagesCountFromFolder(cancellationToken);
+            
+            await folder.CloseAsync(true, cancellationToken);
+            
+            _dispatcher.UpdateImapSessionActivity(mailCredentialsDto.Email);
+            
+            _logger.LogInformation("Got messages count from folder {folder}: {messageCount}",
+                selectedFolder.ToString(), totalMessagesCount);
+            
+            return totalMessagesCount;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Cannot get messages count from folder");
+            
+            return Error.Failure("message.receive.error","Cannot get message");
+        }
+    }
+
     /// <summary>
     /// Отправка запланированного сообщения
     /// </summary>

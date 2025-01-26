@@ -28,6 +28,23 @@ public static class MailKitExtensions
     /// </summary>
     private static readonly int _imapPort = 993;
 
+
+    /// <summary>
+    /// Получение количества писем из папки
+    /// </summary>
+    /// <param name="folder">Папка</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns>Количество писем</returns>
+    public static async Task<int> GetMessagesCountFromFolder(
+        this IMailFolder folder,
+        CancellationToken cancellationToken = default)
+    {
+        return (await folder.SearchAsync(
+            SearchOptions.Count,
+            SearchQuery.All,
+            cancellationToken)).Count;
+    }
+    
     /// <summary>
     /// Получение всех сообщений из папки
     /// </summary>
@@ -117,7 +134,7 @@ public static class MailKitExtensions
             EmailPrefix = emailPrefix
         };
             
-        if (message.Attachments.Count() != 0)
+        if (message.Attachments.Any())
         {
             foreach (var attachment in message.Attachments)
             {
