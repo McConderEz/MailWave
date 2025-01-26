@@ -19,6 +19,7 @@ public class MailClientDispatcher : IDisposable
     private readonly Dictionary<string, ImapClient> _imapClients = new();
     private readonly Dictionary<string, SmtpClient> _smtpClients = new();
     private readonly Dictionary<string, ClientSession> _clientSessions = new();
+    private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
     
     public MailClientDispatcher(ILogger<MailClientDispatcher> logger, IDateTimeProvider dateTimeProvider)
     {
@@ -37,23 +38,32 @@ public class MailClientDispatcher : IDisposable
     public async Task<ImapClient> GetImapClientAsync(
         string email, string password, CancellationToken cancellationToken = default)
     {
-        if (!_imapClients.ContainsKey(email))
+        await _semaphore.WaitAsync(cancellationToken);
+        try
         {
-            var client = new ImapClient();
-            await client.ConnectImapAsync(email, cancellationToken: cancellationToken);
-            await client.AuthenticateAsync(email, password, cancellationToken);
-            _imapClients[email] = client;
-            if (_clientSessions.ContainsKey(email))
+            if (!_imapClients.TryGetValue(email, out ImapClient? imapClient))
             {
-                _clientSessions[email].IsImapActive = true;
-                _clientSessions[email].LastImapActivity = _dateTimeProvider.UtcNow;
+                var client = new ImapClient();
+                await client.ConnectImapAsync(email, cancellationToken: cancellationToken);
+                await client.AuthenticateAsync(email, password, cancellationToken);
+                imapClient = client;
+                _imapClients[email] = imapClient;
+                if (_clientSessions.TryGetValue(email, out ClientSession? clientSession))
+                {
+                    clientSession.IsImapActive = true;
+                    clientSession.LastImapActivity = _dateTimeProvider.UtcNow;
+                }
+                else
+                    _clientSessions[email] = new ClientSession
+                        { Email = email, LastImapActivity = _dateTimeProvider.UtcNow, IsImapActive = true };
             }
-            else
-                _clientSessions[email] = new ClientSession
-                    { Email = email, LastImapActivity = _dateTimeProvider.UtcNow, IsImapActive = true };
-        }
 
-        return _imapClients[email];
+            return imapClient;
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
     }
 
     /// <summary>
@@ -67,23 +77,32 @@ public class MailClientDispatcher : IDisposable
     public async Task<SmtpClient> GetSmtpClientAsync(
         string email, string password, CancellationToken cancellationToken = default)
     {
-        if (!_smtpClients.ContainsKey(email))
+        await _semaphore.WaitAsync(cancellationToken);
+        try
         {
-            var client = new SmtpClient();
-            await client.ConnectSmtpAsync(email, cancellationToken: cancellationToken);
-            await client.AuthenticateAsync(email, password, cancellationToken);
-            _smtpClients[email] = client;
-            if (_clientSessions.ContainsKey(email))
+            if (!_smtpClients.TryGetValue(email, out SmtpClient? smtpClient))
             {
-                _clientSessions[email].IsSmtpActive = true;
-                _clientSessions[email].LastSmtpActivity = _dateTimeProvider.UtcNow;
+                var client = new SmtpClient();
+                await client.ConnectSmtpAsync(email, cancellationToken: cancellationToken);
+                await client.AuthenticateAsync(email, password, cancellationToken);
+                smtpClient = client;
+                _smtpClients[email] = smtpClient;
+                if (_clientSessions.TryGetValue(email, out ClientSession? clientSession))
+                {
+                    clientSession.IsSmtpActive = true;
+                    clientSession.LastSmtpActivity = _dateTimeProvider.UtcNow;
+                }
+                else
+                    _clientSessions[email] = new ClientSession
+                        { Email = email, LastSmtpActivity = _dateTimeProvider.UtcNow, IsSmtpActive = true };
             }
-            else
-                _clientSessions[email] = new ClientSession
-                    { Email = email, LastSmtpActivity = _dateTimeProvider.UtcNow, IsSmtpActive = true };
-        }
 
-        return _smtpClients[email];
+            return smtpClient;
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
     }
 
     /// <summary>
