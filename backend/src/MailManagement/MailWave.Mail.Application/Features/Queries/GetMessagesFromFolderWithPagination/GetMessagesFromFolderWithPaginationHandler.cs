@@ -48,7 +48,7 @@ public class GetMessagesFromFolderWithPaginationHandler:
             query.Page,
             query.PageSize,
             cancellationToken);
-
+        
         if (messages.IsFailure)
             return messages.Errors;
 

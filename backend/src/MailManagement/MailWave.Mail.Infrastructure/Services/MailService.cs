@@ -32,6 +32,7 @@ public class MailService : IMailService
     private readonly HybridCache _hybridCache;
     private readonly EmailValidator _validator;
     private readonly MailClientDispatcher _dispatcher;
+    private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
     
     public MailService(
         ILogger<MailService> logger,
@@ -172,6 +173,7 @@ public class MailService : IMailService
         int pageSize,
         CancellationToken cancellationToken = default)
     {
+        await _semaphore.WaitAsync(TimeSpan.FromSeconds(15), cancellationToken);
         try
         {
             
@@ -191,10 +193,7 @@ public class MailService : IMailService
                     var lettersFromFolder = await folder.GetMessagesAsync(
                         mailCredentialsDto.Email, page, pageSize, cancellationToken);
 
-                    if (lettersFromFolder.Count == 0)
-                        return [];
-                    
-                    return lettersFromFolder;
+                    return lettersFromFolder.Count == 0 ? [] : lettersFromFolder;
                 },
                 cancellationToken: cancellationToken);
 
@@ -211,6 +210,10 @@ public class MailService : IMailService
             _logger.LogError("Cannot receive email message");
 
             return Error.Failure("email.receive.error","Cannot receive email message");
+        }
+        finally
+        {
+            _semaphore.Release();
         }
     }
 
