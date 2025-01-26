@@ -85,7 +85,7 @@ public class MailController: ApplicationController
         if (result.IsFailure)
             result.Errors.ToResponse();
 
-        return Ok(result);
+        return Ok(result.Value);
     }
     
     [HttpGet("{messageId:int}/crypted-signed-message-from-folder-by-id")]

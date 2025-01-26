@@ -39,10 +39,7 @@ public static class MailKitExtensions
         this IMailFolder folder,
         CancellationToken cancellationToken = default)
     {
-        return (await folder.SearchAsync(
-            SearchOptions.Count,
-            SearchQuery.All,
-            cancellationToken)).Count;
+        return (await folder.SearchAsync(SearchQuery.All, cancellationToken)).Count;
     }
     
     /// <summary>
@@ -81,11 +78,11 @@ public static class MailKitExtensions
                 From = message.From.Mailboxes.FirstOrDefault()!.Address,
                 Body = message.HtmlBody,
                 To = message.To.Select(t => t.ToString()).ToList(),
-                Subject = message.Subject,
+                Subject = message.Subject ?? "",
                 Date = message.Date.UtcDateTime,
                 Folder = folder.Name,
-                IsCrypted = message.Subject.Contains(Constraints.CRYPTED_SUBJECT),
-                IsSigned = message.Subject.Contains(Constraints.SIGNED_SUBJECT),
+                IsCrypted = message.Subject?.Contains(Constraints.CRYPTED_SUBJECT) ?? false,
+                IsSigned = message.Subject?.Contains(Constraints.SIGNED_SUBJECT) ?? false,
                 EmailPrefix = emailPrefix
             });
         }
@@ -127,8 +124,8 @@ public static class MailKitExtensions
             From = message.From.Mailboxes.FirstOrDefault()!.Address,
             To = message.To.Select(t => t.ToString()).ToList(),
             Subject = message.Subject,
-            IsCrypted = message.Subject.Contains(Constraints.CRYPTED_SUBJECT),
-            IsSigned = message.Subject.Contains(Constraints.SIGNED_SUBJECT),
+            IsCrypted = message.Subject?.Contains(Constraints.CRYPTED_SUBJECT) ?? false,
+            IsSigned = message.Subject?.Contains(Constraints.SIGNED_SUBJECT) ?? false,
             Date = message.Date.UtcDateTime,
             Folder = folder.Name,
             EmailPrefix = emailPrefix
