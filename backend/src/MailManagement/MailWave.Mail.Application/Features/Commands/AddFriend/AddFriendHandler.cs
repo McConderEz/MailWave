@@ -55,7 +55,7 @@ public class AddFriendHandler: ICommandHandler<AddFriendCommand>
             From = command.MailCredentialsDto.Email,
             To = [command.Receiver],
             Subject = Domain.Constraints.Constraints.FRIENDS_REQUEST_SUBJECT,
-            Body = keys.publicKey + "#" + keys.privateKey
+            Body = Convert.ToBase64String(keys.publicKey) + "#" + Convert.ToBase64String(keys.privateKey)
         };
         
         var result = await _mailService.SendMessage(
