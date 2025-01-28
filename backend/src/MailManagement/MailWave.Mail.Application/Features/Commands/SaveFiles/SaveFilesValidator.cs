@@ -21,6 +21,10 @@ public class SaveFilesValidator: AbstractValidator<SaveFilesCommand>
             .NotEmpty()
             .WithError(Errors.General.ValueIsRequired("directoryPath"));
         
+        RuleFor(g => g.FileName)
+            .NotEmpty()
+            .WithError(Errors.General.ValueIsRequired("fileName"));
+        
         RuleFor(r => r.MessageId)
             .GreaterThanOrEqualTo((uint)1)
             .WithError(Errors.General.ValueIsInvalid("message id"));

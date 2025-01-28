@@ -85,11 +85,20 @@ public class SaveFilesHandler: ICommandHandler<SaveFilesCommand>
         if (message.Value is { IsCrypted: true })
         { 
             await DecryptAndSaveAttachments(
-                command.DirectoryPath, attachments.Value, desData.Value.key, desData.Value.iv, cancellationToken);
+                command.DirectoryPath,
+                command.FileName,
+                attachments.Value,
+                desData.Value.key,
+                desData.Value.iv,
+                cancellationToken);
         }
         else
         {
-            await SaveAttachments(command.DirectoryPath, attachments.Value, cancellationToken);
+            await SaveAttachments(
+                command.DirectoryPath, 
+                command.FileName,
+                attachments.Value, 
+                cancellationToken);
         }
         
         attachments.Value.ForEach(a => a.Content.Close());
@@ -103,10 +112,12 @@ public class SaveFilesHandler: ICommandHandler<SaveFilesCommand>
     /// Сохранение вложений
     /// </summary>
     /// <param name="directoryPath">Директория для сохранения</param>
+    /// <param name="fileName">Название файла</param>
     /// <param name="attachments">Вложения</param>
     /// <param name="cancellationToken">Токен отмены</param>
     private async Task SaveAttachments(
         string directoryPath,
+        string fileName,
         List<Attachment> attachments,
         CancellationToken cancellationToken = default)
     {
@@ -114,6 +125,8 @@ public class SaveFilesHandler: ICommandHandler<SaveFilesCommand>
         {
             foreach (var attachment in attachments)
             {
+                if (attachment.FileName != fileName) continue;
+                
                 using var memoryStream = new MemoryStream();
 
                 await using var fs = new FileStream(Path.Combine(directoryPath, attachment.FileName),
@@ -134,12 +147,15 @@ public class SaveFilesHandler: ICommandHandler<SaveFilesCommand>
     /// Расшифровка и сохранение вложений
     /// </summary>
     /// <param name="directoryPath">Директория для сохранения</param>
+    /// <param name="fileName">Название файла</param>
     /// <param name="attachments">Вложения</param>
     /// <param name="key">Ключ</param>
     /// <param name="iv">Вектор инициализации</param>
     /// <param name="cancellationToken">Токен отмены</param>
     /// <returns></returns>
-    private async Task DecryptAndSaveAttachments(string directoryPath,
+    private async Task DecryptAndSaveAttachments(
+        string directoryPath,
+        string fileName,
         List<Attachment> attachments,
         byte[] key,
         byte[] iv,
@@ -149,6 +165,8 @@ public class SaveFilesHandler: ICommandHandler<SaveFilesCommand>
         {
             foreach (var attachment in attachments)
             {
+                if (attachment.FileName != fileName) continue;
+                
                 using var memoryStream = new MemoryStream();
 
                 if (attachment.FileName.EndsWith(".key") || attachment.FileName.EndsWith(".iv"))

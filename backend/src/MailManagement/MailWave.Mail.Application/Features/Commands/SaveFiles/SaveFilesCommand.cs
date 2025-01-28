@@ -8,4 +8,5 @@ public record SaveFilesCommand(
     MailCredentialsDto MailCredentialsDto,
     Constraints.EmailFolder EmailFolder,
     string DirectoryPath,
+    string FileName,
     uint MessageId) : ICommand;

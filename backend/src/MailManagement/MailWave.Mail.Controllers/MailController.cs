@@ -106,7 +106,7 @@ public class MailController: ApplicationController
         if (result.IsFailure)
             result.Errors.ToResponse();
 
-        return Ok(result);
+        return Ok(result.Value);
     }
     
     [HttpPost]
@@ -151,7 +151,7 @@ public class MailController: ApplicationController
         if (result.IsFailure)
             result.Errors.ToResponse();
 
-        return Ok(result);
+        return Ok(result.Value.VerifyAnswer);
     }
     
     [HttpPost("saving-files")]
@@ -165,6 +165,7 @@ public class MailController: ApplicationController
             new MailCredentialsDto(mailCredentials.Email, mailCredentials.Password),
             request.SelectedFolder,
             request.DirectoryPath,
+            request.FileName,
             request.MessageId);
 
         var result = await handler.Handle(command, cancellationToken);
