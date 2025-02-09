@@ -1,14 +1,17 @@
-﻿using MailWave.Mail.Domain.Entities;
+﻿using MailWave.Mail.Application.Repositories;
+using MailWave.Mail.Domain.Entities;
 using MailWave.SharedKernel.Shared;
 using MailWave.SharedKernel.Shared.Errors;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
+using NpgsqlTypes;
 
 namespace MailWave.Mail.Infrastructure.Repositories;
 
 /// <summary>
 /// Репозиторий писем
 /// </summary>
-public class LetterRepository
+public class LetterRepository : ILetterRepository
 {
     private readonly ApplicationDbContext _dbContext;
 
@@ -113,5 +116,65 @@ public class LetterRepository
             .ToListAsync(cancellationToken);
 
         return letters;
+    }
+
+    /// <summary>
+    /// Получение писем по учётным данным с пагинацией
+    /// </summary>
+    /// <param name="email">Имя пользователя</param>
+    /// <param name="page">Страница</param>
+    /// <param name="pageSize">Размер страницы</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns></returns>
+    public async Task<List<Letter>> GetByCredentialsWithPagination(
+        string email,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var letters = await _dbContext.Letters
+            .FromSqlRaw(@"
+        SELECT * FROM mail.letters 
+        WHERE EXISTS (
+            SELECT 1 FROM jsonb_array_elements_text(""to"") AS t 
+            WHERE t = @email
+        ) OR ""from"" = @email 
+        ORDER BY date DESC 
+        LIMIT @pageSize OFFSET @offset", 
+                new NpgsqlParameter("@email", email),
+                new NpgsqlParameter("@pageSize", pageSize),
+                new NpgsqlParameter("@offset", (page - 1) * pageSize))
+            .ToListAsync(cancellationToken);
+
+        return letters;
+    }
+    
+    /// <summary>
+    /// Получение сохранённого письма из бд
+    /// </summary>
+    /// <param name="email">Имя пользователя</param>
+    /// <param name="messageId">Идентификатор письма</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns></returns>
+    public async Task<Letter> GetByCredentialsAndId(
+        string email,
+        uint messageId,
+        CancellationToken cancellationToken = default)
+    {
+        //TODO: сделать в конфигурации letter колонку Id в snake case
+        var letter = await _dbContext.Letters
+            .FromSqlRaw(@"
+        SELECT * FROM mail.letters 
+        WHERE EXISTS (
+            SELECT 1 FROM jsonb_array_elements_text(""to"") AS t 
+            WHERE t = @email
+        ) OR ""from"" = @email 
+        AND ""Id"" = @messageId
+        LIMIT 1",
+                new NpgsqlParameter("@email", email),
+                new NpgsqlParameter("@messageId", NpgsqlDbType.Integer) { Value = (int)messageId })
+            .ToListAsync(cancellationToken);
+
+        return letter.FirstOrDefault()!;
     }
 }

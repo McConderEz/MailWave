@@ -41,7 +41,6 @@ public class SendCryptOrSignedMessageHandler : ICommandHandler<SendCryptOrSigned
     }
 
     //TODO: Отрефакторить
-    //TODO: Реализовать добавления ЭЦП к body и вложениям
     
     public async Task<Result> Handle(
         SendCryptOrSignedMessageCommand command, CancellationToken cancellationToken = default)

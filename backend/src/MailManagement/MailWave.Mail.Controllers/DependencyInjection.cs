@@ -8,7 +8,7 @@ public static class DependencyInjection
     public static IServiceCollection AddMailControllers(this IServiceCollection services)
     {
         services.AddScoped<IMailContract, MailContract>();
-
+        
         return services;
     }
 }

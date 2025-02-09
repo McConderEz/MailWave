@@ -1,6 +1,8 @@
 ﻿using Hangfire;
 using Hangfire.PostgreSql;
+using MailWave.Mail.Application;
 using MailWave.Mail.Application.CryptProviders;
+using MailWave.Mail.Application.Repositories;
 using MailWave.Mail.Domain.Shared;
 using MailWave.Mail.Infrastructure.BackgroundServices;
 using MailWave.Mail.Infrastructure.Converters;
@@ -33,7 +35,7 @@ public static class DependencyInjection
       
       return services;
    }
-
+   
    private static IServiceCollection AddCryptProviders(this IServiceCollection services)
    {
       services.AddTransient<IDesCryptProvider, DesCryptProvider>();
@@ -86,8 +88,10 @@ public static class DependencyInjection
       services.AddScoped<ApplicationDbContext>();
 
       services.AddScoped<LetterRepository>();
-
+      services.AddScoped<ILetterRepository, LetterRepository>();
+         
       services.AddScoped<UnitOfWork>();
+      services.AddScoped<IUnitOfWork,UnitOfWork>();
       
       return services;
    }

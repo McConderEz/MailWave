@@ -17,6 +17,8 @@ using MailWave.Mail.Application.Features.Queries.GetCryptedMessageFromFolderById
 using MailWave.Mail.Application.Features.Queries.GetMessageFromFolderById;
 using MailWave.Mail.Application.Features.Queries.GetMessagesCountFromFolder;
 using MailWave.Mail.Application.Features.Queries.GetMessagesFromFolderWithPagination;
+using MailWave.Mail.Application.Features.Queries.GetSavedMessageById;
+using MailWave.Mail.Application.Features.Queries.GetSavedMessagesFromDatabase;
 using MailWave.Mail.Contracts.Requests;
 using MailWave.SharedKernel.Shared;
 using Microsoft.AspNetCore.Authorization;
@@ -49,6 +51,26 @@ public class MailController: ApplicationController
         return Ok(result.Value);
     }
     
+    [HttpGet("saved-messages")]
+    public async Task<IActionResult> GetMessagesFromDatabase(
+        [FromQuery] GetSavedMessagesFromDatabaseRequest request,
+        [FromServices] MailCredentialsScopedData mailCredentials,
+        [FromServices] GetSavedMessagesFromDatabaseHandler handler,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetSavedMessagesFromDatabaseQuery(
+            new MailCredentialsDto(mailCredentials.Email, mailCredentials.Password),
+            request.Page,
+            request.PageSize);
+
+        var result = await handler.Handle(query, cancellationToken);
+
+        if (result.IsFailure)
+            result.Errors.ToResponse();
+
+        return Ok(result.Value);
+    }
+    
     [HttpGet("messages-count")]
     public async Task<IActionResult> GetMessagesCountFromFolder(
         [FromQuery] GetMessagesCountFromFolderRequest request,
@@ -58,6 +80,25 @@ public class MailController: ApplicationController
     {
         var query = new GetMessagesCountFromFolderQuery(
             new MailCredentialsDto(mailCredentials.Email, mailCredentials.Password), request.SelectedFolder);
+
+        var result = await handler.Handle(query, cancellationToken);
+
+        if (result.IsFailure)
+            result.Errors.ToResponse();
+
+        return Ok(result.Value);
+    }
+    
+    [HttpGet("{messageId:int}/saved-message")]
+    public async Task<IActionResult> GetSavedMessageFroDatabaseById(
+        [FromRoute] int messageId,
+        [FromServices] MailCredentialsScopedData mailCredentials,
+        [FromServices] GetSavedMessageByIdHandler handler,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetSavedMessageByIdQuery(
+            new MailCredentialsDto(mailCredentials.Email, mailCredentials.Password),
+            (uint)messageId);
 
         var result = await handler.Handle(query, cancellationToken);
 

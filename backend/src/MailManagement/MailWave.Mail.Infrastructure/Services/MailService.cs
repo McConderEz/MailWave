@@ -4,6 +4,7 @@ using MailKit.Net.Imap;
 using MailKit.Net.Smtp;
 using MailKit.Search;
 using MailWave.Core.DTOs;
+using MailWave.Mail.Contracts;
 using MailWave.Mail.Domain.Entities;
 using MailWave.Mail.Domain.Shared;
 using MailWave.Mail.Infrastructure.Dispatchers;
@@ -477,6 +478,20 @@ public class MailService : IMailService
                 if (letter.IsFailure)
                     return letter.Errors;
 
+                if (letter.Value.IsCrypted)
+                {
+                    /*var result = await _decryptMessageContract.GetDecryptedLetter(
+                        mailCredentialsDto,
+                        selectedFolder,
+                        messageId,
+                        cancellationToken);
+                    
+                    if(result.IsFailure)
+                        return result.Errors;
+                    
+                    letter.Value.Body = result.Value.Body;*/
+                }
+                
                 var isExist = await _repository
                     .GetById(folder.Name, messageId, emailPrefix, cancellationToken);
                 

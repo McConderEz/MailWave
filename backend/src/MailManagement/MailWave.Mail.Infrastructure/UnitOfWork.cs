@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using MailWave.Mail.Application;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace MailWave.Mail.Infrastructure;
@@ -6,7 +7,7 @@ namespace MailWave.Mail.Infrastructure;
 /// <summary>
 /// Паттерн UnitOfWork для сохранения транзакционности
 /// </summary>
-public class UnitOfWork
+public class UnitOfWork: IUnitOfWork
 {
     private readonly ApplicationDbContext _dbContext;
 
